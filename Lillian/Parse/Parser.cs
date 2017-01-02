@@ -36,9 +36,7 @@ namespace Lillian.Parse
         public static LambdaExpression Parse(IEnumerable<Token> tokenList)
         {
             var tokens = new TokenEnumerator(tokenList);
-            var block = ExprBlock(tokens);
-
-            return Expression.Lambda(block, block.Variables);
+            return Expression.Lambda(ExprBlock(tokens));
         }
 
         public static BlockExpression ExprBlock(TokenEnumerator tokens)
@@ -49,10 +47,11 @@ namespace Lillian.Parse
                 block.Add(Expr(tokens));
             }
 
-            var variables =
-                block.Where(b => b.NodeType == ExpressionType.Assign)
-                    .Select(b => ((BinaryExpression) b).Left)
-                    .Cast<ParameterExpression>();
+            var variables = block
+                .Where(b => b.NodeType == ExpressionType.Assign)
+                .Select(b => ((BinaryExpression) b).Left)
+                .Cast<ParameterExpression>();
+
             return Expression.Block(variables, block);
         }
 
@@ -89,14 +88,22 @@ namespace Lillian.Parse
         {
             tokens.MoveNext();
             var let = tokens.Current as Let;
+            if (let == null) throw new ParseException("Expected 'let'");
+
             tokens.MoveNext();
             var id = tokens.Current as Identifier;
+            if (id == null) throw new ParseException("Expected valid Identifier in 'let' binding.");
+
             tokens.MoveNext();
             var assign = tokens.Current as AssignOp;
+            if (assign == null) throw new ParseException("Expected '=' in 'let' binding");
+
             var val = NonEmptyExpr(tokens);
 
-            return Expression.Assign(
-                Expression.Variable(typeof (int), id.Name), val);
+            var variable = Expression.Variable(typeof (int), id.Name);
+            Scope.Add(id.Name, variable);
+
+            return Expression.Assign(variable, val);
         }
 
         public static Expression Sum(TokenEnumerator tokens)
@@ -157,11 +164,7 @@ namespace Lillian.Parse
             if (tokens.Peek() is IntConstant)
                 return Number(tokens);
             if (tokens.Peek() is Identifier)
-            {
-                tokens.MoveNext();
-                var id = (Identifier) tokens.Current;
-                return Expression.Variable(typeof (int), id.Name);
-            }
+                return Identifier(tokens);
 
             return Expr(tokens);
         }
@@ -183,10 +186,31 @@ namespace Lillian.Parse
             }
         }
 
+        public static Expression Identifier(TokenEnumerator tokens)
+        {
+            try
+            {
+                tokens.MoveNext();
+                var id = (Identifier) tokens.Current;
+                return Scope[id.Name];
+            }
+            catch (InvalidCastException)
+            {
+                throw new ParseException($"Expected Identifier, but got {tokens.Current}");
+            }
+            catch (KeyNotFoundException)
+            {
+                throw new ParseException($"Identifier, '{tokens.Current}', has not been declared");
+            }
+        }
+
+        private static void NoopFunction() { }
         public static Expression Noop()
         {
             return (Expression<Action>) (() => NoopFunction());
         }
-        private static void NoopFunction() { }
+
+        public static readonly IDictionary<string, ParameterExpression> Scope =
+            new Dictionary<string, ParameterExpression>() ; 
     }
 }

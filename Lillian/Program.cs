@@ -11,26 +11,32 @@ namespace Lillian
         private static void Main(string[] args)
         {
             var expression = @"
-let a = 2;
-2 + a;
+# Let's do some math
+let x = 2;
+let y = x * 2;
+let z = 3;
+x + y;
 ";
-            var tokens = Tokenizer.Tokenize(new StringReader(expression));
-            /*
-            foreach (var token in tokens)
+            try
             {
-                Console.Write(token);
+
+                var tokens = Tokenizer.Tokenize(new StringReader(expression));
+
+                var expr = Parser.Parse(tokens.Select(t =>
+                {
+                    //Console.Write(t);
+                    return t;
+                }));
+                //Console.WriteLine();
+
+                var executer = expr.Compile();
+                Console.WriteLine(executer.DynamicInvoke());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.GetType()}\n  {ex.Message}");
             }
             Console.WriteLine();
-            */
-
-            var expr = Parser.Parse(tokens.Select(t => {
-                Console.Write(t);
-                return t;
-            }));
-            Console.WriteLine();
-
-            var executer = expr.Compile();
-            Console.WriteLine(executer.DynamicInvoke());
         }
     }
 }

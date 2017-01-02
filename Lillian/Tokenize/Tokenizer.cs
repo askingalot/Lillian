@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 
 namespace Lillian.Tokenize
@@ -15,7 +13,7 @@ namespace Lillian.Tokenize
         public static readonly Regex Symbol = new Regex(@"^[;()]");
         public static readonly Regex Keyword = 
             new Regex($@"^{string.Join("|", "let")}");
-        public static readonly Regex Identifer = new Regex(@"^[_a-z](\d[_a-zA-Z])*");
+        public static readonly Regex Identifer = new Regex(@"^[_a-z]([_a-zA-Z0-9])*");
 
         public static IEnumerable<Token> Tokenize(TextReader reader)
         {
