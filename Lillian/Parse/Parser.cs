@@ -8,7 +8,8 @@ namespace Lillian.Parse
     public static class Parser
     {
         /*
-            Expr    := Sum Semi
+            Expr    := Expr Expr*
+                     | Sum Semi
                      | Semi
             Sum     := Product
                      | Product SumOp Sum 
@@ -29,7 +30,17 @@ namespace Lillian.Parse
         public static LambdaExpression Parse(IEnumerable<Token> tokenList)
         {
             var tokens = new TokenEnumerator(tokenList);
-            return Expression.Lambda(Expr(tokens));
+            return Expression.Lambda(ExprBlock(tokens));
+        }
+
+        public static Expression ExprBlock(TokenEnumerator tokens)
+        {
+            var block = new List<Expression>();
+            while (tokens.HasNext)
+            {
+                block.Add(Expr(tokens));
+            }
+            return Expression.Block(block);
         }
 
         public static Expression Expr(TokenEnumerator tokens)
@@ -98,17 +109,17 @@ namespace Lillian.Parse
 
                     return sum;
                 }
-                tokens.RevertToSavePoint(savePoint);
+            }
+            tokens.RevertToSavePoint(savePoint);
 
-                try
-                {
-                    savePoint = tokens.CreateSavePoint();
-                    return Number(tokens);
-                }
-                catch
-                {
-                    tokens.RevertToSavePoint(savePoint);
-                }
+            try
+            {
+                savePoint = tokens.CreateSavePoint();
+                return Number(tokens);
+            }
+            catch
+            {
+                tokens.RevertToSavePoint(savePoint);
             }
 
             return Expr(tokens);

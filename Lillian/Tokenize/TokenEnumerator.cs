@@ -45,6 +45,8 @@ namespace Lillian.Tokenize
             }
         }
 
+        public bool HasNext => (CurrentPosition + 1) < _tokens.Length;
+
         public bool MoveNext()
         {
             CurrentPosition++;
