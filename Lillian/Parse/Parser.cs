@@ -8,22 +8,22 @@ namespace Lillian.Parse
     public static class Parser
     {
         /*
-            Expr    := Expr Expr*
-                     | Sum Semi
-                     | Semi
-            Sum     := Product
-                     | Product SumOp Sum 
-            Product := Factor 
-                     | Factor ProdOp Product 
-            Factor  := ( Sum )
-                     | Number
-                     | Expr
-            Number  := Digit Number 
-                     | Digit
-            Digit   := "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-            SumOp   := + | -
-            ProdOp  := * | /
-            Semi    := ;
+            ExprBlock := Expr Expr*
+            Expr      := Sum Semi
+                       | Semi
+            Sum       := Product
+                       | Product SumOp Sum 
+            Product   := Factor 
+                       | Factor ProdOp Product 
+            Factor    := ( Sum )
+                       | Number
+                       | Expr
+            Number    := Digit Number 
+                       | Digit
+            Digit     := "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+            SumOp     := + | -
+            ProdOp    := * | /
+            Semi      := ;
 
          */
 
@@ -45,13 +45,18 @@ namespace Lillian.Parse
 
         public static Expression Expr(TokenEnumerator tokens)
         {
-            var savePos = tokens.CreateSavePoint();
-            if (!tokens.MoveNext() || tokens.Current is SemiColon)
+            if (!tokens.HasNext) 
+                throw new ParseException("Unexpected end of input.");
+
+            var savePoint = tokens.CreateSavePoint();
+            tokens.MoveNext();
+            if (tokens.Current is SemiColon)
                 return Noop();
-            tokens.RevertToSavePoint(savePos);
+            tokens.RevertToSavePoint(savePoint);
 
             var sum = Sum(tokens);
-            if (!tokens.MoveNext() || !(tokens.Current is SemiColon))
+            tokens.MoveNext();
+            if (!(tokens.Current is SemiColon))
                 throw new ParseException("Expected ';'.");
 
             return sum;
@@ -71,8 +76,8 @@ namespace Lillian.Parse
                 if (sumOp is MinusOp)
                     return Expression.Subtract(product, Sum(tokens));
             }
-
             tokens.RevertToSavePoint(savePoint);
+
             return product;
         }
 
@@ -90,8 +95,8 @@ namespace Lillian.Parse
                 if (prodOp is DivideOp)
                     return Expression.Divide(factor, Product(tokens));
             }
-
             tokens.RevertToSavePoint(savePoint);
+
             return factor;
         }
 
@@ -112,15 +117,8 @@ namespace Lillian.Parse
             }
             tokens.RevertToSavePoint(savePoint);
 
-            try
-            {
-                savePoint = tokens.CreateSavePoint();
+            if (tokens.Peek() is IntConstant)
                 return Number(tokens);
-            }
-            catch
-            {
-                tokens.RevertToSavePoint(savePoint);
-            }
 
             return Expr(tokens);
         }

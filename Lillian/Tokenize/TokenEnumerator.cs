@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,6 +47,8 @@ namespace Lillian.Tokenize
         }
 
         public bool HasNext => (CurrentPosition + 1) < _tokens.Length;
+
+        public Token Peek() => _tokens[CurrentPosition + 1];
 
         public bool MoveNext()
         {
