@@ -40,7 +40,10 @@ namespace Lillian.Tokenize
     {
         public DivideOp() : base("/") { }
     }
-
+    public class AssignOp : Op
+    {
+        public AssignOp() : base("=") { }
+    }
 
 
     /*************************************************************
@@ -86,8 +89,8 @@ namespace Lillian.Tokenize
      ************************************************************/
     public class Identifier : Token
     {
-        public Identifier(string lexeme) : base(lexeme) { 
-        }
+        public Identifier(string lexeme) : base(lexeme) { }
+        public string Name => Lexeme;
     }
 
 

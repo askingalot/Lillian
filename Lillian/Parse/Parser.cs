@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using Lillian.Tokenize;
 
@@ -8,39 +9,51 @@ namespace Lillian.Parse
     public static class Parser
     {
         /*
-            ExprBlock := Expr Expr*
-            Expr      := Sum Semi
-                       | Semi
-            Sum       := Product
-                       | Product SumOp Sum 
-            Product   := Factor 
-                       | Factor ProdOp Product 
-            Factor    := ( Sum )
-                       | Number
-                       | Expr
-            Number    := Digit Number 
-                       | Digit
-            Digit     := "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-            SumOp     := + | -
-            ProdOp    := * | /
-            Semi      := ;
+            ExprBlock     := Expr Expr*
+            Expr          := NonEmptyExpr
+                           | Semi
+            NonEmptyExpr  := Binding Semi
+                           | Sum Semi
+            Binding       := "let" Id AssignOp Expr
+            Sum           := Product
+                           | Product SumOp Sum 
+            Product       := Factor 
+                           | Factor ProdOp Product 
+            Factor        := ( Sum )
+                           | Number
+                           | Expr
+            Number        := Digit Number 
+                           | Digit
+            Digit         := "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+            Id            := "a"-"z" ("a"-"z" | _ | "A-Z")*
+            SumOp         := + | -
+            ProdOp        := * | /
+            AssignOp      := =
+            Semi          := ;
 
          */
 
         public static LambdaExpression Parse(IEnumerable<Token> tokenList)
         {
             var tokens = new TokenEnumerator(tokenList);
-            return Expression.Lambda(ExprBlock(tokens));
+            var block = ExprBlock(tokens);
+
+            return Expression.Lambda(block, block.Variables);
         }
 
-        public static Expression ExprBlock(TokenEnumerator tokens)
+        public static BlockExpression ExprBlock(TokenEnumerator tokens)
         {
             var block = new List<Expression>();
             while (tokens.HasNext)
             {
                 block.Add(Expr(tokens));
             }
-            return Expression.Block(block);
+
+            var variables =
+                block.Where(b => b.NodeType == ExpressionType.Assign)
+                    .Select(b => ((BinaryExpression) b).Left)
+                    .Cast<ParameterExpression>();
+            return Expression.Block(variables, block);
         }
 
         public static Expression Expr(TokenEnumerator tokens)
@@ -54,12 +67,36 @@ namespace Lillian.Parse
                 return Noop();
             tokens.RevertToSavePoint(savePoint);
 
+            return NonEmptyExpr(tokens);
+        }
+
+        public static Expression NonEmptyExpr(TokenEnumerator tokens)
+        {
+            if (tokens.Peek() is Let)
+            {
+                return Binding(tokens);
+            }
+
             var sum = Sum(tokens);
             tokens.MoveNext();
             if (!(tokens.Current is SemiColon))
                 throw new ParseException("Expected ';'.");
 
             return sum;
+        }
+
+        public static Expression Binding(TokenEnumerator tokens)
+        {
+            tokens.MoveNext();
+            var let = tokens.Current as Let;
+            tokens.MoveNext();
+            var id = tokens.Current as Identifier;
+            tokens.MoveNext();
+            var assign = tokens.Current as AssignOp;
+            var val = NonEmptyExpr(tokens);
+
+            return Expression.Assign(
+                Expression.Variable(typeof (int), id.Name), val);
         }
 
         public static Expression Sum(TokenEnumerator tokens)
@@ -119,6 +156,12 @@ namespace Lillian.Parse
 
             if (tokens.Peek() is IntConstant)
                 return Number(tokens);
+            if (tokens.Peek() is Identifier)
+            {
+                tokens.MoveNext();
+                var id = (Identifier) tokens.Current;
+                return Expression.Variable(typeof (int), id.Name);
+            }
 
             return Expr(tokens);
         }

@@ -11,13 +11,17 @@ namespace Lillian
         private static void Main(string[] args)
         {
             var expression = @"
-2 + 2 * 
-+4; 
-1 + -1; # 1 + 1
-# foo
--200;
+let a = 2;
+2 + a;
 ";
             var tokens = Tokenizer.Tokenize(new StringReader(expression));
+            /*
+            foreach (var token in tokens)
+            {
+                Console.Write(token);
+            }
+            Console.WriteLine();
+            */
 
             var expr = Parser.Parse(tokens.Select(t => {
                 Console.Write(t);

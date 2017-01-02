@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 
@@ -10,8 +11,11 @@ namespace Lillian.Tokenize
         public static readonly Regex Whitespace = new Regex(@"^\s+");
         public static readonly Regex Comment = new Regex(@"^#.*$");
         public static readonly Regex Integer = new Regex(@"^[+\-]?\d+");
-        public static readonly Regex Operator = new Regex(@"^[+\-*/]");
+        public static readonly Regex Operator = new Regex(@"^[+\-*/=]");
         public static readonly Regex Symbol = new Regex(@"^[;()]");
+        public static readonly Regex Keyword = 
+            new Regex($@"^{string.Join("|", "let")}");
+        public static readonly Regex Identifer = new Regex(@"^[_a-z](\d[_a-zA-Z])*");
 
         public static IEnumerable<Token> Tokenize(TextReader reader)
         {
@@ -43,6 +47,14 @@ namespace Lillian.Tokenize
                     {
                         yield return GetSymbol(match.Value);
                     }
+                    else if ((match = Keyword.Match(line)).Success)
+                    {
+                        yield return GetKeyword(match.Value);
+                    }
+                    else if ((match = Identifer.Match(line)).Success)
+                    {
+                        yield return new Identifier(match.Value);
+                    }
                     else
                     {
                         throw new TokenizerException($"Unknown token: {line}");
@@ -51,7 +63,18 @@ namespace Lillian.Tokenize
                     line = line.Substring(match.Length);
                 }
             }
-        } 
+        }
+
+        public static Keyword GetKeyword(string lexeme)
+        {
+            switch (lexeme)
+            {
+                case "let":
+                    return new Let();
+                default:
+                    throw new TokenizerException($"Unknown Keyword {lexeme}");
+            }
+        }
 
         public static Op GetOp(string op)
         {
@@ -65,6 +88,8 @@ namespace Lillian.Tokenize
                     return new TimesOp();
                 case "/":
                     return new DivideOp();
+                case "=":
+                    return new AssignOp();
                 default:
                     throw new TokenizerException($"Unknown Operator: {op}");
             }
