@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace Lillian.Tokenize
 {
@@ -25,12 +26,12 @@ namespace Lillian.Tokenize
                 }
                 else if (nextChar == '(')
                 {
-                    tokens.Add(new LeftParen());
+                    tokens.Add(new OpenParen());
                     reader.Read();
                 }
                 else if (nextChar == ')')
                 {
-                    tokens.Add(new RightParen());
+                    tokens.Add(new CloseParen());
                     reader.Read();
                 }
                 else if (nextChar == ';')
@@ -50,16 +51,16 @@ namespace Lillian.Tokenize
         {
             try
             {
-                var num = 0;
+                var num = new StringBuilder();
                 var next = reader.Peek();
                 while (next != -1 && char.IsNumber((char) next))
                 {
-                    num = (num*10) + (next - '0');
-                    reader.Read();
+                    num.Append(next);
 
+                    reader.Read();
                     next = reader.Peek();
                 }
-                return new IntConstant(num);
+                return new IntConstant(num.ToString());
             }
             catch
             {

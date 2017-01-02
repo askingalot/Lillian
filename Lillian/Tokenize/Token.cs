@@ -1,50 +1,66 @@
-﻿namespace Lillian.Tokenize
+﻿using System;
+using System.Data;
+using System.Threading;
+
+namespace Lillian.Tokenize
 {
-    public abstract class Token { }
-    public abstract class Op : Token { } 
+    public abstract class Token
+    {
+        public Token(string lexeme)
+        {
+            Lexeme = lexeme;
+        }
+        public string Lexeme { get; }
+        public override string ToString() => $" {Lexeme} ";
+    }
+
+    public abstract class Op : Token
+    {
+        public Op(string lexeme) : base(lexeme) { }
+    } 
+
     public class PlusOp : Op
     {
-        public override string ToString() => " + ";
+        public PlusOp() : base("+") { }
     }
 
     public class MinusOp : Op
     {
-        public override string ToString() => " - ";
+        public MinusOp() : base("-") { }
     }
 
     public class TimesOp : Op
     {
-        public override string ToString() => " * ";
+        public TimesOp() : base("*") { }
     }
 
     public class DivideOp : Op
     {
-        public override string ToString() => " / ";
+        public DivideOp() : base("/") { }
     }
 
     public class IntConstant : Token
     {
-        public IntConstant(int value)
+        public IntConstant(string lexeme) : base(lexeme)
         {
-            Value = value;
+            Value = Int32.Parse(lexeme);
         }
 
         public int Value { get; }
-        public override string ToString() => Value.ToString();
     }
 
-    public class LeftParen : Token
+    public class OpenParen : Token
     {
-        public override string ToString() => "(";
+        public OpenParen() : base("(") { }
     }
 
-    public class RightParen : Token
+    public class CloseParen : Token
     {
-        public override string ToString() => ")";
+        public CloseParen() : base (")") { }
     }
 
     public class SemiColon : Token
     {
-        public override string ToString() => ";";
+        public SemiColon() : base (";") { }
     }
 }
