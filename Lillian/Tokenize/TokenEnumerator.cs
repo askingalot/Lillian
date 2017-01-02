@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -18,20 +19,29 @@ namespace Lillian.Tokenize
 
         public int CurrentPosition { get; private set; }
 
-        public void CreateSavePoint(string name)
+        public string CreateSavePoint(string name)
         {
             _savePositions.Add(name, CurrentPosition);
+            return name;
+        }
+
+        public string CreateSavePoint()
+        {
+            return CreateSavePoint(Guid.NewGuid().ToString());
         }
 
         public void RevertToSavePoint(string name)
         {
             CurrentPosition = _savePositions[name];
-            foreach (var savePos in _savePositions)
+
+            var savePositionsToRemove = _savePositions
+                .Where(p => p.Value >= CurrentPosition)
+                .Select(p => p.Key)
+                .ToList();
+
+            foreach (var posName in savePositionsToRemove)
             {
-                if (savePos.Value >= CurrentPosition)
-                {
-                    _savePositions.Remove(savePos.Key);
-                }
+                _savePositions.Remove(posName);
             }
         }
 

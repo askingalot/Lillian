@@ -8,7 +8,7 @@ namespace Lillian
     {
         private static void Main(string[] args)
         {
-            var expression = "2 + (2 / 2);";
+            var expression = "2 + 2 * 4;";
             var tokens = Tokenizer.Tokenize(expression);
             foreach (var token in tokens)
             {

@@ -55,7 +55,7 @@ namespace Lillian.Tokenize
                 var next = reader.Peek();
                 while (next != -1 && char.IsNumber((char) next))
                 {
-                    num.Append(next);
+                    num.Append((char)next);
 
                     reader.Read();
                     next = reader.Peek();
