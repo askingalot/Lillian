@@ -1,93 +1,88 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using System.Security.Cryptography.X509Certificates;
+using System.Text.RegularExpressions;
 
 namespace Lillian.Tokenize
 {
     public static class Tokenizer
     {
-        public static IEnumerable<Token> Tokenize(string expression)
-        {
-            var reader = new StringReader(expression);
-            var tokens = new List<Token>();
+        public static readonly Regex Whitespace = new Regex(@"^\s+");
+        public static readonly Regex Comment = new Regex(@"^#.*$");
+        public static readonly Regex Integer = new Regex(@"^[+\-]?\d+");
+        public static readonly Regex Operator = new Regex(@"^[+\-*/]");
+        public static readonly Regex Symbol = new Regex(@"^[;()]");
 
-            int next;
-            while ((next = reader.Peek()) != -1)
+        public static IEnumerable<Token> Tokenize(TextReader reader)
+        {
+            string line;
+            while ((line = reader.ReadLine()) != null)
             {
-                var nextChar = (char) next;
-                if (char.IsWhiteSpace(nextChar))
+                if (string.IsNullOrWhiteSpace(line)) continue;
+
+                while (! string.IsNullOrWhiteSpace(line))
                 {
-                    reader.Read(); // advance
-                    // throw space away
-                }
-                else if (char.IsNumber(nextChar))
-                {
-                    tokens.Add(GetIntConstant(reader));
-                }
-                else if (nextChar == '(')
-                {
-                    tokens.Add(new OpenParen());
-                    reader.Read();
-                }
-                else if (nextChar == ')')
-                {
-                    tokens.Add(new CloseParen());
-                    reader.Read();
-                }
-                else if (nextChar == ';')
-                {
-                    tokens.Add(new SemiColon());
-                    reader.Read();
-                }
-                else
-                {
-                    tokens.Add(GetOp(reader));
+                    Match match;
+                    if ((match = Whitespace.Match(line)).Success)
+                    {
+                        // Skip white space
+                    }
+                    else if ((match = Comment.Match(line)).Success)
+                    {
+                        // Skip Comments too
+                    }
+                    else if ((match = Integer.Match(line)).Success)
+                    {
+                        yield return new IntConstant(match.Value);
+                    }
+                    else if ((match = Operator.Match(line)).Success)
+                    {
+                        yield return GetOp(match.Value);
+                    }
+                    else if ((match = Symbol.Match(line)).Success)
+                    {
+                        yield return GetSymbol(match.Value);
+                    }
+                    else
+                    {
+                        throw new TokenizerException($"Unknown token: {line}");
+                    }
+
+                    line = line.Substring(match.Length);
                 }
             }
-            return tokens;
-        }
+        } 
 
-        public static IntConstant GetIntConstant(StringReader reader)
+        public static Op GetOp(string op)
         {
-            try
+            switch (op)
             {
-                var num = new StringBuilder();
-                var next = reader.Peek();
-                while (next != -1 && char.IsNumber((char) next))
-                {
-                    num.Append((char)next);
-
-                    reader.Read();
-                    next = reader.Peek();
-                }
-                return new IntConstant(num.ToString());
-            }
-            catch
-            {
-                throw new TokenizerException("Unable to tokenize number.");
-            }
-        }
-
-        public static Op GetOp(StringReader reader)
-        {
-            var nextChar = (char) reader.Peek();
-            switch (nextChar)
-            {
-                case '+':
-                    reader.Read(); // advance
+                case "+":
                     return new PlusOp();
-                case '-':
-                    reader.Read(); // advance
+                case "-":
                     return new MinusOp();
-                case '*':
-                    reader.Read(); // advance
+                case "*":
                     return new TimesOp();
-                case '/':
-                    reader.Read(); // advance
+                case "/":
                     return new DivideOp();
+                default:
+                    throw new TokenizerException($"Unknown Operator: {op}");
             }
+        }
 
-            throw new TokenizerException($"Unknown Operator: {nextChar}");
+        public static Symbol GetSymbol(string op)
+        {
+            switch (op)
+            {
+                case ";":
+                    return new SemiColon();
+                case "(":
+                    return new OpenParen();
+                case ")":
+                    return new CloseParen();
+                default:
+                    throw new TokenizerException($"Unknown Symbol: {op}");
+            }
         }
     }
 }

@@ -12,6 +12,10 @@ namespace Lillian.Tokenize
         public override string ToString() => $" {Lexeme} ";
     }
 
+
+    /*************************************************************
+     *  Operators
+     ************************************************************/
     public abstract class Op : Token
     {
         public Op(string lexeme) : base(lexeme) { }
@@ -37,6 +41,59 @@ namespace Lillian.Tokenize
         public DivideOp() : base("/") { }
     }
 
+
+
+    /*************************************************************
+     *  Symbols
+     ************************************************************/
+    public abstract class Symbol : Token
+    {
+        public Symbol(string lexeme) : base(lexeme) { }
+    }
+
+    public class OpenParen : Symbol
+    {
+        public OpenParen() : base("(") { }
+    }
+
+    public class CloseParen : Symbol
+    {
+        public CloseParen() : base (")") { }
+    }
+
+    public class SemiColon : Symbol
+    {
+        public SemiColon() : base (";") { }
+    }
+
+
+    /*************************************************************
+     *  Keywords
+     ************************************************************/
+    public abstract class Keyword : Token
+    {
+        public Keyword(string lexeme) : base(lexeme) { }
+    }
+
+    public class Let : Keyword
+    {
+        public Let() : base ("let") { }
+    }
+
+
+    /*************************************************************
+     *  Identifiers
+     ************************************************************/
+    public class Identifier : Token
+    {
+        public Identifier(string lexeme) : base(lexeme) { 
+        }
+    }
+
+
+    /*************************************************************
+     *  Literals
+     ************************************************************/
     public class IntConstant : Token
     {
         public IntConstant(string lexeme) : base(lexeme)
@@ -45,20 +102,5 @@ namespace Lillian.Tokenize
         }
 
         public int Value { get; }
-    }
-
-    public class OpenParen : Token
-    {
-        public OpenParen() : base("(") { }
-    }
-
-    public class CloseParen : Token
-    {
-        public CloseParen() : base (")") { }
-    }
-
-    public class SemiColon : Token
-    {
-        public SemiColon() : base (";") { }
     }
 }
