@@ -1,7 +1,9 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net.Mail;
 using Lillian.Tokenize;
 
 namespace Lillian.Parse
@@ -14,7 +16,8 @@ namespace Lillian.Parse
                            | Semi
             NonEmptyExpr  := Binding Semi
                            | Sum Semi
-            Binding       := "let" Id AssignOp Expr
+                           | String Semi
+            Binding       := 'let' Id AssignOp Expr
             Sum           := Product
                            | Product SumOp Sum 
             Product       := Factor 
@@ -24,8 +27,9 @@ namespace Lillian.Parse
                            | Expr
             Number        := Digit Number 
                            | Digit
-            Digit         := "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-            Id            := "a"-"z" ("a"-"z" | _ | "A-Z")*
+            Digit         := '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+            String        := 'abcd...' | ''
+            Id            := 'a'-'z' ('a'-'z' | _ | 'A-Z')*
             SumOp         := + | -
             ProdOp        := * | / | %
             AssignOp      := =
@@ -76,6 +80,15 @@ namespace Lillian.Parse
                 return Binding(tokens);
             }
 
+            var savePoint = tokens.CreateSavePoint();
+            if (tokens.Peek() is StringLiteral)
+            {
+                var strLit = StringLiteral(tokens);
+                if (tokens.MoveNext() && tokens.Current is SemiColon)
+                    return strLit;
+            }
+            tokens.RevertToSavePoint(savePoint);
+
             var sum = Sum(tokens);
             tokens.MoveNext();
             if (!(tokens.Current is SemiColon))
@@ -100,12 +113,20 @@ namespace Lillian.Parse
 
             var val = NonEmptyExpr(tokens);
 
-            var variable = Expression.Variable(typeof (int), id.Name);
+            var variable = Expression.Variable(val.Type, id.Name);
             if (Scope.ContainsKey(id.Name))
                 throw new ParseException($"Identifier '{id.Name}' already bound.");                
             Scope.Add(id.Name, variable);
 
             return Expression.Assign(variable, val);
+        }
+
+        public static Expression StringLiteral(TokenEnumerator tokens)
+        {
+            tokens.MoveNext();
+            var strLiteral = tokens.Current as StringLiteral;
+
+            return Expression.Constant(strLiteral.Value);
         }
 
         public static Expression Sum(TokenEnumerator tokens)
@@ -165,7 +186,7 @@ namespace Lillian.Parse
             }
             tokens.RevertToSavePoint(savePoint);
 
-            if (tokens.Peek() is IntConstant)
+            if (tokens.Peek() is IntLiteral)
                 return Number(tokens);
             if (tokens.Peek() is Identifier)
                 return Identifier(tokens);
@@ -178,7 +199,7 @@ namespace Lillian.Parse
             try
             {
                 tokens.MoveNext();
-                return Expression.Constant(((IntConstant) tokens.Current).Value);
+                return Expression.Constant(((IntLiteral) tokens.Current).Value);
             }
             catch (InvalidCastException)
             {

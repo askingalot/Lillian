@@ -6,14 +6,15 @@ namespace Lillian.Tokenize
 {
     public static class Tokenizer
     {
-        public static readonly Regex Whitespace = new Regex(@"^\s+");
-        public static readonly Regex Comment = new Regex(@"^#.*$");
-        public static readonly Regex Integer = new Regex(@"^[+\-]?\d+");
-        public static readonly Regex Operator = new Regex(@"^[+\-*/%=]");
-        public static readonly Regex Symbol = new Regex(@"^[;()]");
+        public static readonly Regex Whitespace     = new Regex(@"^\s+");
+        public static readonly Regex Comment        = new Regex(@"^#.*$");
+        public static readonly Regex IntegerLiteral = new Regex(@"^[+\-]?\d+");
+        public static readonly Regex StringLiteral  = new Regex(@"^'.*'");
+        public static readonly Regex Operator       = new Regex(@"^[+\-*/%=]");
+        public static readonly Regex Symbol         = new Regex(@"^[;()]");
         public static readonly Regex Keyword = 
             new Regex($@"^{string.Join("|", "let")}");
-        public static readonly Regex Identifer = new Regex(@"^[_a-z]([_a-zA-Z0-9])*");
+        public static readonly Regex Identifer      = new Regex(@"^[_a-z]([_a-zA-Z0-9])*");
 
         public static IEnumerable<Token> Tokenize(TextReader reader)
         {
@@ -33,9 +34,13 @@ namespace Lillian.Tokenize
                     {
                         // Skip Comments too
                     }
-                    else if ((match = Integer.Match(line)).Success)
+                    else if ((match = IntegerLiteral.Match(line)).Success)
                     {
-                        yield return new IntConstant(match.Value);
+                        yield return new IntLiteral(match.Value);
+                    }
+                    else if ((match = StringLiteral.Match(line)).Success)
+                    {
+                        yield return new StringLiteral(match.Value);
                     }
                     else if ((match = Operator.Match(line)).Success)
                     {

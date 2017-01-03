@@ -101,13 +101,25 @@ namespace Lillian.Tokenize
     /*************************************************************
      *  Literals
      ************************************************************/
-    public class IntConstant : Token
+
+    public abstract class Literal<T> : Token
     {
-        public IntConstant(string lexeme) : base(lexeme)
+        public Literal(string lexeme) : base(lexeme) { }
+        public T Value { get; protected set; }
+    }
+
+    public class IntLiteral : Literal<int>
+    {
+        public IntLiteral(string lexeme) : base(lexeme)
         {
             Value = Int32.Parse(lexeme);
         }
-
-        public int Value { get; }
+    }
+    public class StringLiteral : Literal<string>
+    {
+        public StringLiteral(string lexeme) : base(lexeme)
+        {
+            Value = lexeme;
+        }
     }
 }

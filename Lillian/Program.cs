@@ -18,7 +18,10 @@ let mary = x + y * (x * x - y);
 mary;
 
 let a = 10 % 8;
-a;
+
+let s = 'foo';
+
+s;
 ";
             try
             {
