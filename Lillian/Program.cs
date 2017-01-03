@@ -14,20 +14,19 @@ namespace Lillian
 # Let's do some math
 let x = 2;
 let y = x * 2;
-let z = 3;
-x + y;
+let mary = x + y * (x * x - y);
+mary;
 ";
             try
             {
-
                 var tokens = Tokenizer.Tokenize(new StringReader(expression));
 
                 var expr = Parser.Parse(tokens.Select(t =>
                 {
-                    //Console.Write(t);
+            //        Console.Write(t);
                     return t;
                 }));
-                //Console.WriteLine();
+                Console.WriteLine();
 
                 var executer = expr.Compile();
                 Console.WriteLine(executer.DynamicInvoke());

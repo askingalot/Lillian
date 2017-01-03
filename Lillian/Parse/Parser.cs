@@ -101,6 +101,8 @@ namespace Lillian.Parse
             var val = NonEmptyExpr(tokens);
 
             var variable = Expression.Variable(typeof (int), id.Name);
+            if (Scope.ContainsKey(id.Name))
+                throw new ParseException($"Identifier '{id.Name}' already bound.");                
             Scope.Add(id.Name, variable);
 
             return Expression.Assign(variable, val);
@@ -209,6 +211,7 @@ namespace Lillian.Parse
         {
             return (Expression<Action>) (() => NoopFunction());
         }
+
 
         public static readonly IDictionary<string, ParameterExpression> Scope =
             new Dictionary<string, ParameterExpression>() ; 
