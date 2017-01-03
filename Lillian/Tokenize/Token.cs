@@ -40,6 +40,10 @@ namespace Lillian.Tokenize
     {
         public DivideOp() : base("/") { }
     }
+    public class ModOp : Op
+    {
+        public ModOp() : base("%") { }
+    }
     public class AssignOp : Op
     {
         public AssignOp() : base("=") { }

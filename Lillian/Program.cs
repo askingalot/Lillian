@@ -16,6 +16,9 @@ let x = 2;
 let y = x * 2;
 let mary = x + y * (x * x - y);
 mary;
+
+let a = 10 % 8;
+a;
 ";
             try
             {

@@ -27,7 +27,7 @@ namespace Lillian.Parse
             Digit         := "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
             Id            := "a"-"z" ("a"-"z" | _ | "A-Z")*
             SumOp         := + | -
-            ProdOp        := * | /
+            ProdOp        := * | / | %
             AssignOp      := =
             Semi          := ;
 
@@ -140,6 +140,8 @@ namespace Lillian.Parse
                     return Expression.Multiply(factor, Product(tokens));
                 if (prodOp is DivideOp)
                     return Expression.Divide(factor, Product(tokens));
+                if (prodOp is ModOp)
+                    return Expression.Modulo(factor, Product(tokens));
             }
             tokens.RevertToSavePoint(savePoint);
 

@@ -9,7 +9,7 @@ namespace Lillian.Tokenize
         public static readonly Regex Whitespace = new Regex(@"^\s+");
         public static readonly Regex Comment = new Regex(@"^#.*$");
         public static readonly Regex Integer = new Regex(@"^[+\-]?\d+");
-        public static readonly Regex Operator = new Regex(@"^[+\-*/=]");
+        public static readonly Regex Operator = new Regex(@"^[+\-*/%=]");
         public static readonly Regex Symbol = new Regex(@"^[;()]");
         public static readonly Regex Keyword = 
             new Regex($@"^{string.Join("|", "let")}");
@@ -86,6 +86,8 @@ namespace Lillian.Tokenize
                     return new TimesOp();
                 case "/":
                     return new DivideOp();
+                case "%":
+                    return new ModOp();
                 case "=":
                     return new AssignOp();
                 default:
