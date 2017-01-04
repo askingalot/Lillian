@@ -13,6 +13,7 @@ namespace Lillian
             var expression = @"
 # Let's do some math
 let x = 2;
+let z = x;
 let y = x * 2;
 let mary = x + y * (x * x - y);
 mary;
@@ -21,7 +22,6 @@ let a = 10 % 8;
 
 let s = 'foo';
 
-s;
 ";
             try
             {

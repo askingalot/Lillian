@@ -1,9 +1,6 @@
-﻿using System;
-using System.CodeDom;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Net.Mail;
 using Lillian.Tokenize;
 
 namespace Lillian.Parse
@@ -12,12 +9,12 @@ namespace Lillian.Parse
     {
         /*
             ExprBlock     := Expr Expr*
-            Expr          := NonEmptyExpr
+            Expr          := NonEmptyExpr Semi
                            | Semi
-            NonEmptyExpr  := Binding Semi
-                           | Sum Semi
-                           | String Semi
-            Binding       := 'let' Id AssignOp Expr
+            NonEmptyExpr  := Binding
+                           | Sum
+                           | String
+            Binding       := 'let' Id AssignOp NonEmptyExpr
             Sum           := Product
                            | Product SumOp Sum 
             Product       := Factor 
@@ -64,175 +61,163 @@ namespace Lillian.Parse
             if (!tokens.HasNext) 
                 throw new ParseException("Unexpected end of input.");
 
-            var savePoint = tokens.CreateSavePoint();
-            tokens.MoveNext();
-            if (tokens.Current is SemiColon)
-                return Noop();
-            tokens.RevertToSavePoint(savePoint);
+            var expr = NonEmptyExpr(tokens) ?? Util.Noop();
 
-            return NonEmptyExpr(tokens);
+            tokens.MoveNext();
+            if (! (tokens.Current is SemiColon))
+                throw new ParseException("Expected ';'");
+
+            return expr;
         }
 
         public static Expression NonEmptyExpr(TokenEnumerator tokens)
         {
-            if (tokens.Peek() is Let)
-            {
-                return Binding(tokens);
-            }
-
-            var savePoint = tokens.CreateSavePoint();
-            if (tokens.Peek() is StringLiteral)
-            {
-                var strLit = StringLiteral(tokens);
-                if (tokens.MoveNext() && tokens.Current is SemiColon)
-                    return strLit;
-            }
-            tokens.RevertToSavePoint(savePoint);
-
-            var sum = Sum(tokens);
-            tokens.MoveNext();
-            if (!(tokens.Current is SemiColon))
-                throw new ParseException("Expected ';'.");
-
-            return sum;
+            return Binding(tokens)
+                   ?? StringLiteral(tokens)
+                   ?? Sum(tokens);
         }
 
         public static Expression Binding(TokenEnumerator tokens)
         {
-            tokens.MoveNext();
-            var let = tokens.Current as Let;
-            if (let == null) throw new ParseException("Expected 'let'");
+            return Util.Transaction(tokens, toks => {
+                tokens.MoveNext();
+                var let = tokens.Current as Let;
+                if (let == null)
+                    return null;
 
-            tokens.MoveNext();
-            var id = tokens.Current as Identifier;
-            if (id == null) throw new ParseException("Expected valid Identifier in 'let' binding.");
+                tokens.MoveNext();
+                var id = tokens.Current as Identifier;
+                if (id == null) throw new ParseException("Expected valid Identifier in 'let' binding.");
 
-            tokens.MoveNext();
-            var assign = tokens.Current as AssignOp;
-            if (assign == null) throw new ParseException("Expected '=' in 'let' binding");
+                tokens.MoveNext();
+                var assign = tokens.Current as AssignOp;
+                if (assign == null) throw new ParseException("Expected '=' in 'let' binding");
 
-            var val = NonEmptyExpr(tokens);
+                var val = NonEmptyExpr(tokens);
 
-            var variable = Expression.Variable(val.Type, id.Name);
-            if (Scope.ContainsKey(id.Name))
-                throw new ParseException($"Identifier '{id.Name}' already bound.");                
-            Scope.Add(id.Name, variable);
+                var variable = Expression.Variable(val.Type, id.Name);
+                if (Scope.ContainsKey(id.Name))
+                    throw new ParseException($"Identifier '{id.Name}' already bound.");
+                Scope.Add(id.Name, variable);
 
-            return Expression.Assign(variable, val);
+                return Expression.Assign(variable, val);
+            });
         }
 
         public static Expression StringLiteral(TokenEnumerator tokens)
         {
-            tokens.MoveNext();
-            var strLiteral = tokens.Current as StringLiteral;
-
-            return Expression.Constant(strLiteral.Value);
+            return Util.Transaction(tokens, toks => {
+                tokens.MoveNext();
+                var strLiteral = tokens.Current as StringLiteral;
+                return strLiteral == null
+                    ? null
+                    : Expression.Constant(strLiteral.Value);
+            });
         }
 
         public static Expression Sum(TokenEnumerator tokens)
         {
             var product = Product(tokens);
+            if (product == null)
+                return null;
 
-            var savePoint = tokens.CreateSavePoint();
-            if (tokens.MoveNext())
-            {
+            var sum = Util.Transaction(tokens, toks => {
+                tokens.MoveNext();
                 var sumOp = tokens.Current;
+                if (!(sumOp is Op)) return null;
+
+                var sumVal = Sum(toks);
+                if (sumVal == null)
+                    throw new ParseException("Expected a numeric expression.");
 
                 if (sumOp is PlusOp)
-                    return Expression.Add(product, Sum(tokens));
+                    return Expression.Add(product, sumVal);
                 if (sumOp is MinusOp)
-                    return Expression.Subtract(product, Sum(tokens));
-            }
-            tokens.RevertToSavePoint(savePoint);
+                    return Expression.Subtract(product, sumVal);
 
-            return product;
+                return null;
+                ;
+            });
+
+            return sum ?? product;
         }
 
         public static Expression Product(TokenEnumerator tokens)
         {
             var factor = Factor(tokens);
-           
-            var savePoint = tokens.CreateSavePoint();
-            if (tokens.MoveNext())
-            {
-                var prodOp = tokens.Current;
+            if (factor == null)
+                return null;
+
+            var product = Util.Transaction(tokens, toks => {
+                toks.MoveNext();
+                var prodOp = toks.Current;
+                if (!(prodOp is Op)) return null;
+
+                var prodVal = Product(toks);
+                if (prodVal == null)
+                    throw new ParseException("Expected a numeric expression.");
 
                 if (prodOp is TimesOp)
-                    return Expression.Multiply(factor, Product(tokens));
+                    return Expression.Multiply(factor, prodVal);
                 if (prodOp is DivideOp)
-                    return Expression.Divide(factor, Product(tokens));
+                    return Expression.Divide(factor, prodVal);
                 if (prodOp is ModOp)
-                    return Expression.Modulo(factor, Product(tokens));
-            }
-            tokens.RevertToSavePoint(savePoint);
+                    return Expression.Modulo(factor, prodVal);
 
-            return factor;
+                return null;
+            });
+
+            return product ?? factor;
         }
 
         public static Expression Factor(TokenEnumerator tokens)
         {
-            var savePoint = tokens.CreateSavePoint();
-            if (tokens.MoveNext())
-            {
-                var startToken = tokens.Current;
-                if (startToken is OpenParen)
-                {
-                    var sum = Sum(tokens);
-                    if (tokens.MoveNext() && !(tokens.Current is CloseParen))
-                        throw new ParseException("Expected ')'");
-
-                    return sum;
-                }
-            }
-            tokens.RevertToSavePoint(savePoint);
-
-            if (tokens.Peek() is IntLiteral)
-                return Number(tokens);
-            if (tokens.Peek() is Identifier)
-                return Identifier(tokens);
-
-            return Expr(tokens);
+            return Parenthetical(tokens)
+                   ?? Number(tokens)
+                   ?? Identifier(tokens)
+                   ?? Expr(tokens);
         }
 
-        public static Expression Number(IEnumerator<Token> tokens)
+        public static Expression Parenthetical(TokenEnumerator tokens)
         {
-            try
-            {
+            return Util.Transaction(tokens, toks => {
                 tokens.MoveNext();
-                return Expression.Constant(((IntLiteral) tokens.Current).Value);
-            }
-            catch (InvalidCastException)
-            {
-                throw new ParseException($"Expected Number, but got: {tokens.Current}");
-            }
-            catch
-            {
-                throw new ParseException("Expected Number, but got an unexpected error");
-            }
+                var startToken = tokens.Current;
+                if (!(startToken is OpenParen))
+                    return null;
+
+                var sum = Sum(tokens);
+                if (tokens.MoveNext() && !(tokens.Current is CloseParen))
+                    throw new ParseException("Expected ')'");
+
+                return sum;
+            });
+        }
+
+        public static Expression Number(TokenEnumerator tokens)
+        {
+            return Util.Transaction(tokens, toks => {
+                toks.MoveNext();
+                var intLIteral = toks.Current as IntLiteral;
+                return intLIteral == null 
+                    ? null 
+                    : Expression.Constant(intLIteral.Value);
+            });
         }
 
         public static Expression Identifier(TokenEnumerator tokens)
         {
-            try
+            return Util.Transaction(tokens, toks => 
             {
                 tokens.MoveNext();
-                var id = (Identifier) tokens.Current;
-                return Scope[id.Name];
-            }
-            catch (InvalidCastException)
-            {
-                throw new ParseException($"Expected Identifier, but got {tokens.Current}");
-            }
-            catch (KeyNotFoundException)
-            {
-                throw new ParseException($"Identifier, '{tokens.Current}', has not been declared");
-            }
-        }
+                var id = tokens.Current as Identifier;
+                if (id == null) return null;
 
-        private static void NoopFunction() { }
-        public static Expression Noop()
-        {
-            return (Expression<Action>) (() => NoopFunction());
+                if (! Scope.ContainsKey(id.Name))
+                    throw new ParseException($"Identifier, '{tokens.Current}', has not been declared");
+
+                return Scope[id.Name];
+            });
         }
 
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -61,9 +60,19 @@ namespace Lillian.Tokenize
             CurrentPosition = -1;
         }
 
-        public Token Current => _tokens[CurrentPosition];
+        public Token Current
+        {
+            get
+            {
+                if (CurrentPosition >= _tokens.Length)
+                    throw new OutOfTokensException();
+
+                return _tokens[CurrentPosition];
+            }
+        }
 
         object IEnumerator.Current => Current;
         public void Dispose() { }
     }
+    
 }
