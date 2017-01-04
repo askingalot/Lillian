@@ -17,3 +17,10 @@ My attempt to understand language interpreters
             How without classes or mutability?
             Call functions on static classes
             Some kind of special "mutable" keyword like F#?
+
+
+    Inspirations:
+        C#
+        Erlang
+        Python
+        JavaScript
