@@ -1,8 +1,10 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Lillian.Tokenize;
 
 namespace Lillian.Parse
@@ -14,7 +16,6 @@ namespace Lillian.Parse
             Expr          := NonEmptyExpr Semi
                            | Semi
             NonEmptyExpr  := Call
-                           | Id
                            | Binding
                            | String
                            | Sum
@@ -29,6 +30,7 @@ namespace Lillian.Parse
                            | Factor ProdOp Product 
             Factor        := ( Sum )
                            | Number
+                           | Id
                            | NonEmptyExpr
             Number        := Digit Number 
                            | Digit
@@ -80,7 +82,6 @@ namespace Lillian.Parse
         public static Expression NonEmptyExpr(TokenEnumerator tokens)
         {
             return Call(tokens)
-                   ?? Identifier(tokens)
                    ?? Binding(tokens)
                    ?? StringLiteral(tokens)
                    ?? Sum(tokens);
@@ -115,11 +116,10 @@ namespace Lillian.Parse
                 if (toks.MoveNext() && !(toks.Current is CloseParen))
                     throw new ParseException("Expected ')'");
 
-                Expression<ParamsAction> printLambda = vals => Builtin.Print(vals);
                 var printArgs = Expression.NewArrayInit(
                     typeof (object), args.Select(a => Expression.Convert(a, typeof(object))));
 
-                return Expression.Invoke(printLambda, printArgs);
+                return Expression.Invoke(id, printArgs);
             });
         }
 
@@ -221,6 +221,7 @@ namespace Lillian.Parse
         {
             return MathParenthetical(tokens)
                    ?? Number(tokens)
+                   ?? Identifier(tokens)
                    ?? NonEmptyExpr(tokens);
         }
 
@@ -265,36 +266,12 @@ namespace Lillian.Parse
             });
         }
 
-
-        public static readonly IDictionary<string, ParameterExpression> Scope =
-            new Dictionary<string, ParameterExpression> {
-                { "print", Expression.Parameter(typeof(ParamsAction), "print") }
+        public static readonly IDictionary<string, Expression> Scope =
+            new Dictionary<string, Expression> {
+                { "print", (Expression<ParamsFunc>) (vals => Builtin.Print(vals)) },
+                { "println", (Expression<ParamsFunc>) (vals => Builtin.PrintLn(vals)) },
+                { "concat", (Expression<ParamsFunc>) (vals => Builtin.Concat(vals)) }
             };
-
-
-        // TODO: Throw these functions away
-        public static LambdaExpression HelloFunction()
-        {
-            var c = Expression.Call(typeof (Builtin).GetMethod(nameof(Builtin.Hello)));
-            var l = Expression.Lambda(c);
-
-            var i = Expression.Invoke(l);
-            var l2 = Expression.Lambda(i);
-
-            return l;
-        }
-
-        public static LambdaExpression PrintFunction(params object[] vals)
-        {
-            var p = Expression.Variable(typeof (object[]), "vals");
-
-            var c = Expression.Call(
-                typeof (Builtin).GetMethod(nameof(Builtin.Print)),
-                p);
-
-            var l = Expression.Lambda(c);
-            return l;
-        }
 
     }
 }

@@ -1,24 +1,35 @@
-﻿using System.Collections.Generic;
-using static System.Console;
+﻿using System;
+using System.Linq;
 
 namespace Lillian
 {
-    public delegate void ParamsAction(params object[] vals);
+    public delegate object ParamsFunc(params object[] vals);
     public static class Builtin
     {
-        public static void Print(params object[] vals)
+        public static string Print(params object[] vals)
         {
-            if (vals == null) return;
-            foreach (var val in vals)
+            if (vals != null)
             {
-                Write(val);
+                foreach (var val in vals)
+                {
+                    Console.Write(val);
+                }
             }
+            return "";
         }
 
-
-        public static void Hello()
+        public static string PrintLn(params object[] vals)
         {
-            Write("Hello, World!");
+            Print(vals);
+            Console.WriteLine();
+            return "";
+        }
+
+        public static string Concat(params object[] vals)
+        {
+            return vals == null
+                ? ""
+                : string.Concat(vals.Select(v => v ?? ""));
         }
     }
 }

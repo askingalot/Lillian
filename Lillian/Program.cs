@@ -13,18 +13,25 @@ namespace Lillian
             var expression = @"
 # Let's do some math
 let x = 2;
-let z = x;
+let z = x + 1;
 
-#let y = x * 2;
+println('x = ', x);
+println('z = ', z);
+
+let y = x * 2;
 #let mary = x + y * (x * x - y);
 #mary;
 
 #let a = 10 % 8;
 
 let s = 'foo';
-print(1);
-#print('bar', ' ', s, 'blah       ');
+
+println(1);
+println('bar', ' ', s, 'blah       ');
 #print('bar', ' ', s, 'blah');
+
+let hw = concat('hello,', ' ', 'world!', 1, 2, 3, x);
+println(hw);
 ";
             try
             {
