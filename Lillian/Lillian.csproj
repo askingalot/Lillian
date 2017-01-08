@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Builtin.cs" />
     <Compile Include="Parse\ParseException.cs" />
     <Compile Include="Parse\Parser.cs" />
     <Compile Include="Parse\ParserUtils.cs" />

@@ -33,13 +33,14 @@ namespace Lillian.Tokenize
         public void RevertToSavePoint(string name)
         {
             CurrentPosition = _savePositions[name];
+            _savePositions.Remove(name);
 
-            var savePositionsToRemove = _savePositions
-                .Where(p => p.Value >= CurrentPosition)
+            var avePositionsGreaterThanCurrent = _savePositions
+                .Where(p => p.Value > CurrentPosition)
                 .Select(p => p.Key)
                 .ToList();
 
-            foreach (var posName in savePositionsToRemove)
+            foreach (var posName in avePositionsGreaterThanCurrent)
             {
                 _savePositions.Remove(posName);
             }

@@ -72,6 +72,10 @@ namespace Lillian.Tokenize
     {
         public SemiColon() : base (";") { }
     }
+    public class Comma : Symbol
+    {
+        public Comma() : base (",") { }
+    }
 
 
     /*************************************************************

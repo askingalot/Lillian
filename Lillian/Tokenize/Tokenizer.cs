@@ -9,9 +9,9 @@ namespace Lillian.Tokenize
         public static readonly Regex Whitespace     = new Regex(@"^\s+");
         public static readonly Regex Comment        = new Regex(@"^#.*$");
         public static readonly Regex IntegerLiteral = new Regex(@"^[+\-]?\d+");
-        public static readonly Regex StringLiteral  = new Regex(@"^'.*'");
+        public static readonly Regex StringLiteral  = new Regex(@"^'([^']*)'");
         public static readonly Regex Operator       = new Regex(@"^[+\-*/%=]");
-        public static readonly Regex Symbol         = new Regex(@"^[;()]");
+        public static readonly Regex Symbol         = new Regex(@"^[,;()]");
         public static readonly Regex Keyword = 
             new Regex($@"^{string.Join("|", "let")}");
         public static readonly Regex Identifer      = new Regex(@"^[_a-z]([_a-zA-Z0-9])*");
@@ -40,7 +40,7 @@ namespace Lillian.Tokenize
                     }
                     else if ((match = StringLiteral.Match(line)).Success)
                     {
-                        yield return new StringLiteral(match.Value);
+                        yield return new StringLiteral(match.Groups[1].Value);
                     }
                     else if ((match = Operator.Match(line)).Success)
                     {
@@ -104,6 +104,8 @@ namespace Lillian.Tokenize
         {
             switch (op)
             {
+                case ",":
+                    return new Comma();
                 case ";":
                     return new SemiColon();
                 case "(":
