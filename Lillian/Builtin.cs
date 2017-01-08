@@ -6,17 +6,7 @@ namespace Lillian
     public delegate void ParamsAction(params object[] vals);
     public static class Builtin
     {
-        public static void Print(object val1)
-        {
-            Print(new [] {val1});
-        }
-
-        public static void Print(object val1, object val2)
-        {
-            Print(new [] {val1, val2});
-        }
-
-        public static void Print(IEnumerable<object> vals)
+        public static void Print(params object[] vals)
         {
             if (vals == null) return;
             foreach (var val in vals)

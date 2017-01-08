@@ -22,7 +22,9 @@ let z = x;
 #let a = 10 % 8;
 
 let s = 'foo';
-print('bar ', s);
+print(1);
+#print('bar', ' ', s, 'blah       ');
+#print('bar', ' ', s, 'blah');
 ";
             try
             {
@@ -40,14 +42,10 @@ print('bar ', s);
 
                 var executer = expr.Compile();
                 Console.WriteLine(executer.DynamicInvoke());
-
-                //Parser.HelloFunction().Compile().DynamicInvoke();
-                //Parser.PrintFunction("bar").Compile().DynamicInvoke();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error: {ex.GetType()}\n  {ex.Message}");
-                throw;
             }
             Console.WriteLine();
         }

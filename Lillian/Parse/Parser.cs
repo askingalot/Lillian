@@ -44,8 +44,7 @@ namespace Lillian.Parse
 
         public static LambdaExpression Parse(IEnumerable<Token> tokenList)
         {
-            var tokens = new TokenEnumerator(tokenList);
-            return Expression.Lambda(ExprBlock(tokens), "foo", new ParameterExpression[0]);
+            return Expression.Lambda(ExprBlock(new TokenEnumerator(tokenList)));
         }
 
         public static BlockExpression ExprBlock(TokenEnumerator tokens)
@@ -89,7 +88,8 @@ namespace Lillian.Parse
 
         public static Expression Call(TokenEnumerator tokens)
         {
-            return Util.Transaction(tokens, toks => {
+            return Util.Transaction(tokens, toks =>
+            {
                 var id = Identifier(tokens);
                 if (id == null) return null;
 
@@ -106,7 +106,7 @@ namespace Lillian.Parse
                     if (toks.Peek() is CloseParen) break;
 
                     toks.MoveNext();
-                    if (! (toks.Current is Comma)) 
+                    if (!(toks.Current is Comma))
                         throw new ParseException("Expected ','");
 
                     arg = NonEmptyExpr(toks);
@@ -115,10 +115,11 @@ namespace Lillian.Parse
                 if (toks.MoveNext() && !(toks.Current is CloseParen))
                     throw new ParseException("Expected ')'");
 
-                Expression<Action<object, object>> printLambda = (val1, val2) => Builtin.Print(val1,val2);
-                var invokePrint = Expression.Invoke(printLambda, args);
-                                                        ;
-                return invokePrint;
+                Expression<ParamsAction> printLambda = vals => Builtin.Print(vals);
+                var printArgs = Expression.NewArrayInit(
+                    typeof (object), args.Select(a => Expression.Convert(a, typeof(object))));
+
+                return Expression.Invoke(printLambda, printArgs);
             });
         }
 
@@ -267,7 +268,7 @@ namespace Lillian.Parse
 
         public static readonly IDictionary<string, ParameterExpression> Scope =
             new Dictionary<string, ParameterExpression> {
-                { "print", Expression.Parameter(typeof(Action<object[]>), "print") }
+                { "print", Expression.Parameter(typeof(ParamsAction), "print") }
             };
 
 
