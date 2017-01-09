@@ -49,6 +49,11 @@ namespace Lillian.Tokenize
         public AssignOp() : base("=") { }
     }
 
+    public class EqualOp : Op
+    {
+        public EqualOp() : base("==") { }
+    }
+
 
     /*************************************************************
      *  Symbols
@@ -124,6 +129,14 @@ namespace Lillian.Tokenize
         public StringLiteral(string lexeme) : base(lexeme)
         {
             Value = lexeme;
+        }
+    }
+
+    public class BooleanLiteral : Literal<bool>
+    {
+        public BooleanLiteral(string lexeme) : base(lexeme)
+        {
+            Value = bool.Parse(lexeme);
         }
     }
 }

@@ -1,10 +1,9 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
+using System.Threading;
+using Lillian.Lib;
 using Lillian.Tokenize;
 
 namespace Lillian.Parse
@@ -18,12 +17,15 @@ namespace Lillian.Parse
             NonEmptyExpr  := Call
                            | Binding
                            | String
+                           | Boolean
                            | Sum
+                           | Comparison
             Call          := Id ( Args )
                            | Id ( ) 
             Args          := NonEmptyExpr, Args
                            | NonEmptyExpr
-            Binding       := 'let' Id AssignOp NonEmptyExpr
+            Binding       := let Id AssignOp NonEmptyExpr
+            Comparison    := NonEmptyExpr EqualOp NonEmptyExpr
             Sum           := Product
                            | Product SumOp Sum 
             Product       := Factor 
@@ -32,11 +34,12 @@ namespace Lillian.Parse
                            | Number
                            | Id
                            | NonEmptyExpr
+            Boolean       := true | false
             Number        := Digit Number 
                            | Digit
-            Digit         := '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-            String        := 'abcd...' | ''
-            Id            := 'a'-'z' ('a'-'z' | _ | 'A-Z')*
+            Digit         := 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+            String        := abcd... | ''
+            Id            := a-z (a-z | _ | A-Z)*
             SumOp         := + | -
             ProdOp        := * | / | %
             AssignOp      := =
@@ -84,6 +87,8 @@ namespace Lillian.Parse
             return Call(tokens)
                    ?? Binding(tokens)
                    ?? StringLiteral(tokens)
+                   ?? BooleanLiteral(tokens)
+                   //?? Comparison(tokens)
                    ?? Sum(tokens);
         }
 
@@ -148,6 +153,34 @@ namespace Lillian.Parse
                 Scope.Add(id.Name, variable);
 
                 return Expression.Assign(variable, val);
+            });
+        }
+
+        public static Expression BooleanLiteral(TokenEnumerator tokens)
+        {
+            return Util.Transaction(tokens, toks => {
+                tokens.MoveNext();
+                var booleanLiteral = tokens.Current as BooleanLiteral;
+                return booleanLiteral == null
+                    ? null
+                    : Expression.Constant(booleanLiteral.Value);
+            });
+        }
+
+        public static Expression Comparison(TokenEnumerator tokens)
+        {
+            return Util.Transaction(tokens, toks => {
+                var leftExpr = NonEmptyExpr(toks);
+                if (leftExpr == null) return null;
+
+                toks.MoveNext();
+                if (!(toks.Current is EqualOp)) return null;
+
+                var rightExpr = NonEmptyExpr(toks);
+                if (rightExpr == null)
+                    throw new ParseException("Expected an Expression on right side of comparison");
+
+                return Expression.Equal(leftExpr, rightExpr);
             });
         }
 

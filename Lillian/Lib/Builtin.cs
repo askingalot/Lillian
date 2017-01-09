@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace Lillian
+namespace Lillian.Lib
 {
     public delegate object ParamsFunc(params object[] vals);
     public static class Builtin

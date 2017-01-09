@@ -44,7 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Builtin.cs" />
+    <Compile Include="Lib\Builtin.cs" />
     <Compile Include="Parse\ParseException.cs" />
     <Compile Include="Parse\Parser.cs" />
     <Compile Include="Parse\ParserUtils.cs" />
@@ -57,6 +57,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="code.LLL">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

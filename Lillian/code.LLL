@@ -1,0 +1,9 @@
+﻿# Let's do some math
+let x = 2;
+let z = x + 1 - 27 + (-30) * 100 / 1000;
+println(z);
+
+let str = 'a string';
+
+let t = true;
+let f = false;

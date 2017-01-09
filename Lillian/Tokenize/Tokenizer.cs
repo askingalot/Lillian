@@ -6,15 +6,16 @@ namespace Lillian.Tokenize
 {
     public static class Tokenizer
     {
-        public static readonly Regex Whitespace     = new Regex(@"^\s+");
-        public static readonly Regex Comment        = new Regex(@"^#.*$");
-        public static readonly Regex IntegerLiteral = new Regex(@"^[+\-]?\d+");
-        public static readonly Regex StringLiteral  = new Regex(@"^'([^']*)'");
-        public static readonly Regex Operator       = new Regex(@"^[+\-*/%=]");
-        public static readonly Regex Symbol         = new Regex(@"^[,;()]");
+        public static readonly Regex Whitespace      = new Regex(@"^\s+");
+        public static readonly Regex Comment         = new Regex(@"^#.*$");
+        public static readonly Regex IntegerLiteral  = new Regex(@"^[+\-]?\d+");
+        public static readonly Regex StringLiteral   = new Regex(@"^'([^']*)'");
+        public static readonly Regex BooleanLiteral  = new Regex(@"^(true|false)");
+        public static readonly Regex Operator        = new Regex(@"^([+\-*/%=]|==)");
+        public static readonly Regex Symbol          = new Regex(@"^[,;()]");
         public static readonly Regex Keyword = 
             new Regex($@"^{string.Join("|", "let")}");
-        public static readonly Regex Identifer      = new Regex(@"^[_a-z]([_a-zA-Z0-9])*");
+        public static readonly Regex Identifer       = new Regex(@"^[_a-z]([_a-zA-Z0-9])*");
 
         public static IEnumerable<Token> Tokenize(TextReader reader)
         {
@@ -41,6 +42,10 @@ namespace Lillian.Tokenize
                     else if ((match = StringLiteral.Match(line)).Success)
                     {
                         yield return new StringLiteral(match.Groups[1].Value);
+                    }
+                    else if ((match = BooleanLiteral.Match(line)).Success)
+                    {
+                        yield return new BooleanLiteral(match.Value);
                     }
                     else if ((match = Operator.Match(line)).Success)
                     {
@@ -95,6 +100,8 @@ namespace Lillian.Tokenize
                     return new ModOp();
                 case "=":
                     return new AssignOp();
+                case "==":
+                    return new EqualOp();
                 default:
                     throw new TokenizerException($"Unknown Operator: {op}");
             }
