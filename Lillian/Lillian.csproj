@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Lib\Builtin.cs" />
+    <Compile Include="Lib\Utils.cs" />
     <Compile Include="Parse\ParseException.cs" />
     <Compile Include="Parse\Parser.cs" />
     <Compile Include="Parse\ParserUtils.cs" />
