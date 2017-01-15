@@ -106,18 +106,25 @@ namespace Lillian.Parse
                 var id = Identifier(tokens);
                 if (id == null) return null;
 
-                if (!(toks.Peek() is OpenParen)) return null;
+                toks.MoveNext();
+                if (!(toks.Current is OpenParen)) return null;
 
                 var args = new List<Expression>();
-                toks.MoveNext();
-                while (!(toks.Current is CloseParen))
+                if (toks.Peek() is CloseParen)
                 {
-                    var arg = NonEmptyExpr(toks);
-                    args.Add(arg);
-
                     toks.MoveNext();
-                    if (!(toks.Current is Comma || toks.Current is CloseParen))
-                        throw new ParseException("Expected ',' or ')'");
+                }
+                else
+                {
+                    do
+                    {
+                        var arg = NonEmptyExpr(toks);
+                        args.Add(arg);
+
+                        toks.MoveNext();
+                        if (!(toks.Current is Comma || toks.Current is CloseParen))
+                            throw new ParseException("Expected ',' or ')'");
+                    } while (!(toks.Current is CloseParen));
                 }
 
                 var printArgs = Expression.NewArrayInit(

@@ -1,4 +1,10 @@
 ﻿# Let's do some math
+printLine();
+printLine();
+printLine();
+printLine();
+printLine();
+
 let x = 2;
 let z = x + 1 - 27 + (-30) * 100 / 1000;
 printLine(z);
