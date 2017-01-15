@@ -6,6 +6,13 @@ namespace Lillian.Lib
     public delegate object ParamsFunc(params object[] vals);
     public static class Builtin
     {
+        /*
+        public static string Print(object val1)
+        {
+            return PrintAll(val1);
+        }
+        */
+
         public static string Print(params object[] vals)
         {
             if (vals != null)
@@ -18,7 +25,7 @@ namespace Lillian.Lib
             return "";
         }
 
-        public static string PrintLn(params object[] vals)
+        public static string PrintLine(params object[] vals)
         {
             Print(vals);
             Console.WriteLine();
