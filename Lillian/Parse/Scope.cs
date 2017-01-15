@@ -24,7 +24,25 @@ namespace Lillian.Parse
         }
 
         public void Add(string key, Expression value) => _internalScope.Add(key, value);
-        public Expression this[string key] => _internalScope[key];
-        public bool ContainsKey(string key) => _internalScope.ContainsKey(key);
+        public bool ContainsKey(string key)
+        {
+            return _internalScope.ContainsKey(key) 
+                || (Parent?.ContainsKey(key) ?? false);
+
+        }
+
+        public Expression this[string key]
+        {
+            get
+            {
+                if (_internalScope.ContainsKey(key))
+                    return _internalScope[key];
+
+                if (Parent != null)
+                    return Parent[key];
+
+                throw new KeyNotFoundException($"{key} not found in current scope.");
+            }
+        }
     }
 }

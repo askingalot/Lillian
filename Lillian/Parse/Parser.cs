@@ -52,9 +52,11 @@ namespace Lillian.Parse
          */
 
         public Scope Scope { get; }
-        public Parser()
+
+        public Parser() : this(Util.ScopeWithBuiltins()) { }
+        public Parser(Scope parent)
         {
-            Scope = ScopeWithBuiltins();
+            Scope = new Scope(parent);
         }
 
         public LambdaExpression Parse(IEnumerable<Token> tokenList)
@@ -326,18 +328,5 @@ namespace Lillian.Parse
                     : Expression.Constant(booleanLiteral.Value);
             });
         }
-
-
-
-        private Scope ScopeWithBuiltins()
-        {
-            var builtins = typeof (Builtin).GetMethods(BindingFlags.Public | BindingFlags.Static);
-            var initialScope = builtins.ToDictionary<MethodInfo, string, Expression>(
-                builtin => builtin.Name.ToCamelCase(), 
-                builtin => (Expression<ParamsFunc>) 
-                    (vals => builtin.Invoke(null, BindingFlags.Public | BindingFlags.Static, null, new object[] {vals}, null)));
-
-            return new Scope(initialScope);
-        } 
     }
 }

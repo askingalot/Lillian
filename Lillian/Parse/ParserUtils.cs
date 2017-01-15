@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
+using Lillian.Lib;
 using Lillian.Tokenize;
 
 namespace Lillian.Parse
@@ -45,5 +48,16 @@ namespace Lillian.Parse
             }
             return resultExpression;
         }
+
+        public static Scope ScopeWithBuiltins()
+        {
+            var builtins = typeof (Builtin).GetMethods(BindingFlags.Public | BindingFlags.Static);
+            var initialScope = builtins.ToDictionary<MethodInfo, string, Expression>(
+                builtin => builtin.Name.ToCamelCase(), 
+                builtin => (Expression<ParamsFunc>) 
+                    (vals => builtin.Invoke(null, BindingFlags.Public | BindingFlags.Static, null, new object[] {vals}, null)));
+
+            return new Scope(initialScope);
+        } 
     }
 }
