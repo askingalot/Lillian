@@ -14,7 +14,7 @@ namespace Lillian.Tokenize
         public static readonly Regex Operator        = 
             new Regex(@"^(==|!=|>=|<=|>|<|\+|-|\*|\/|%|=)");
         public static readonly Regex Symbol          = new Regex(@"^[,;()]");
-        public static readonly Regex Keyword = 
+        public static readonly Regex Keyword         = 
             new Regex($@"^{string.Join("|", "let")}");
         public static readonly Regex Identifer       = new Regex(@"^[_a-z]([_a-zA-Z0-9])*");
 

@@ -15,7 +15,7 @@ namespace Lillian
             {
                 var tokens = Tokenizer.Tokenize(new StringReader(expression));
 
-                var expr = Parser.Parse(tokens.Select(t =>
+                var expr = new Parser().Parse(tokens.Select(t =>
                 {
 /*                    Console.Write(t);
                     if (t is SemiColon)

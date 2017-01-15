@@ -7,7 +7,7 @@ using Lillian.Tokenize;
 
 namespace Lillian.Parse
 {
-    public static class Parser
+    public class Parser
     {
         /*
             ExprBlock     := Expr Expr*
@@ -51,12 +51,17 @@ namespace Lillian.Parse
 
          */
 
-        public static LambdaExpression Parse(IEnumerable<Token> tokenList)
+        public Parser()
+        {
+            Scope = ScopeWithBuiltins();
+        }
+
+        public LambdaExpression Parse(IEnumerable<Token> tokenList)
         {
             return Expression.Lambda(ExprBlock(new TokenEnumerator(tokenList)));
         }
 
-        public static BlockExpression ExprBlock(TokenEnumerator tokens)
+        public BlockExpression ExprBlock(TokenEnumerator tokens)
         {
             var expressions = new List<Expression>();
             while (tokens.HasNext)
@@ -72,7 +77,7 @@ namespace Lillian.Parse
             return Expression.Block(variables, expressions);
         }
 
-        public static Expression Expr(TokenEnumerator tokens)
+        public Expression Expr(TokenEnumerator tokens)
         {
             if (!tokens.HasNext) 
                 throw new ParseException("Unexpected end of input.");
@@ -86,23 +91,21 @@ namespace Lillian.Parse
             return expr;
         }
 
-        public static Expression NonEmptyExpr(TokenEnumerator tokens)
+        public Expression NonEmptyExpr(TokenEnumerator tokens)
         {
             return Call(tokens)
                    ?? Binding(tokens)
                    ?? BinaryOperation(tokens);
         }
 
-        public static Expression Call(TokenEnumerator tokens)
+        public Expression Call(TokenEnumerator tokens)
         {
             return Util.Transaction(tokens, toks =>
             {
                 var id = Identifier(tokens);
                 if (id == null) return null;
 
-                toks.MoveNext();
-                var startToken = toks.Current;
-                if (!(startToken is OpenParen)) return null;
+                if (!(toks.Peek() is OpenParen)) return null;
 
                 var args = new List<Expression>();
                 toks.MoveNext();
@@ -113,11 +116,8 @@ namespace Lillian.Parse
 
                     toks.MoveNext();
                     if (!(toks.Current is Comma || toks.Current is CloseParen))
-                        throw new ParseException("Expected ','");
+                        throw new ParseException("Expected ',' or ')'");
                 }
-
-                if (toks.MoveNext() && !(toks.Current is CloseParen))
-                    throw new ParseException("Expected ')'");
 
                 var printArgs = Expression.NewArrayInit(
                     typeof (object), args.Select(a => Expression.Convert(a, typeof(object))));
@@ -127,7 +127,7 @@ namespace Lillian.Parse
         }
 
 
-        public static Expression Binding(TokenEnumerator tokens)
+        public Expression Binding(TokenEnumerator tokens)
         {
             return Util.Transaction(tokens, toks => {
                 tokens.MoveNext();
@@ -154,12 +154,12 @@ namespace Lillian.Parse
             });
         }
 
-        public static Expression BinaryOperation(TokenEnumerator tokens)
+        public Expression BinaryOperation(TokenEnumerator tokens)
         {
             return Comparison(tokens);
         }
 
-        public static Expression Comparison(TokenEnumerator tokens)
+        public Expression Comparison(TokenEnumerator tokens)
         {
             var lhs = BooleanLiteral(tokens)
                       ?? StringLiteral(tokens)
@@ -195,7 +195,7 @@ namespace Lillian.Parse
             return comp ?? lhs;
         }
 
-        public static Expression Sum(TokenEnumerator tokens)
+        public Expression Sum(TokenEnumerator tokens)
         {
             var lhs = Product(tokens);
             if (lhs == null) return null;
@@ -220,7 +220,7 @@ namespace Lillian.Parse
             return sum ?? lhs;
         }
 
-        public static Expression Product(TokenEnumerator tokens)
+        public Expression Product(TokenEnumerator tokens)
         {
             var lhs = Factor(tokens);
             if (lhs == null)
@@ -248,7 +248,7 @@ namespace Lillian.Parse
             return product ?? lhs;
         }
 
-        public static Expression Factor(TokenEnumerator tokens)
+        public Expression Factor(TokenEnumerator tokens)
         {
             return MathParenthetical(tokens)
                    ?? Number(tokens)
@@ -256,7 +256,7 @@ namespace Lillian.Parse
                    ?? NonEmptyExpr(tokens);
         }
 
-        public static Expression MathParenthetical(TokenEnumerator tokens)
+        public Expression MathParenthetical(TokenEnumerator tokens)
         {
             return Util.Transaction(tokens, toks => {
                 tokens.MoveNext();
@@ -272,7 +272,7 @@ namespace Lillian.Parse
             });
         }
 
-        public static Expression Number(TokenEnumerator tokens)
+        public Expression Number(TokenEnumerator tokens)
         {
             return Util.Transaction(tokens, toks => {
                 toks.MoveNext();
@@ -283,7 +283,7 @@ namespace Lillian.Parse
             });
         }
 
-        public static Expression Identifier(TokenEnumerator tokens)
+        public Expression Identifier(TokenEnumerator tokens)
         {
             return Util.Transaction(tokens, toks => {
                 toks.MoveNext();
@@ -297,7 +297,7 @@ namespace Lillian.Parse
             });
         }
 
-        public static Expression StringLiteral(TokenEnumerator tokens)
+        public Expression StringLiteral(TokenEnumerator tokens)
         {
             return Util.Transaction(tokens, toks => {
                 tokens.MoveNext();
@@ -308,7 +308,7 @@ namespace Lillian.Parse
             });
         }
 
-        public static Expression BooleanLiteral(TokenEnumerator tokens)
+        public Expression BooleanLiteral(TokenEnumerator tokens)
         {
             return Util.Transaction(tokens, toks => {
                 tokens.MoveNext();
@@ -320,10 +320,9 @@ namespace Lillian.Parse
         }
 
 
-        public static readonly IDictionary<string, Expression> Scope = ScopeWithBuiltins();
+        public readonly IDictionary<string, Expression> Scope;
 
-
-        private static IDictionary<string, Expression> ScopeWithBuiltins()
+        private IDictionary<string, Expression> ScopeWithBuiltins()
         {
             var builtins = typeof (Builtin).GetMethods(BindingFlags.Public | BindingFlags.Static);
             return builtins.ToDictionary<MethodInfo, string, Expression>(
