@@ -49,6 +49,7 @@
     <Compile Include="Parse\ParseException.cs" />
     <Compile Include="Parse\Parser.cs" />
     <Compile Include="Parse\ParserUtils.cs" />
+    <Compile Include="Parse\Scope.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tokenize\Token.cs" />

@@ -51,6 +51,7 @@ namespace Lillian.Parse
 
          */
 
+        public Scope Scope { get; }
         public Parser()
         {
             Scope = ScopeWithBuiltins();
@@ -320,15 +321,16 @@ namespace Lillian.Parse
         }
 
 
-        public readonly IDictionary<string, Expression> Scope;
 
-        private IDictionary<string, Expression> ScopeWithBuiltins()
+        private Scope ScopeWithBuiltins()
         {
             var builtins = typeof (Builtin).GetMethods(BindingFlags.Public | BindingFlags.Static);
-            return builtins.ToDictionary<MethodInfo, string, Expression>(
+            var initialScope = builtins.ToDictionary<MethodInfo, string, Expression>(
                 builtin => builtin.Name.ToCamelCase(), 
                 builtin => (Expression<ParamsFunc>) 
                     (vals => builtin.Invoke(null, BindingFlags.Public | BindingFlags.Static, null, new object[] {vals}, null)));
+
+            return new Scope(initialScope);
         } 
     }
 }
