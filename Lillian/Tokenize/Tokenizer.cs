@@ -11,7 +11,8 @@ namespace Lillian.Tokenize
         public static readonly Regex IntegerLiteral  = new Regex(@"^[+\-]?\d+");
         public static readonly Regex StringLiteral   = new Regex(@"^'([^']*)'");
         public static readonly Regex BooleanLiteral  = new Regex(@"^(true|false)");
-        public static readonly Regex Operator        = new Regex(@"^([+\-*/%=]|==)");
+        public static readonly Regex Operator        = 
+            new Regex(@"^(==|!=|>=|<=|>|<|\+|-|\*|\/|%|=)");
         public static readonly Regex Symbol          = new Regex(@"^[,;()]");
         public static readonly Regex Keyword = 
             new Regex($@"^{string.Join("|", "let")}");
@@ -77,8 +78,7 @@ namespace Lillian.Tokenize
         {
             switch (lexeme)
             {
-                case "let":
-                    return new Let();
+                case "let": return new Let();
                 default:
                     throw new TokenizerException($"Unknown Keyword {lexeme}");
             }
@@ -88,20 +88,18 @@ namespace Lillian.Tokenize
         {
             switch (op)
             {
-                case "+":
-                    return new PlusOp();
-                case "-":
-                    return new MinusOp();
-                case "*":
-                    return new TimesOp();
-                case "/":
-                    return new DivideOp();
-                case "%":
-                    return new ModOp();
-                case "=":
-                    return new AssignOp();
-                case "==":
-                    return new EqualOp();
+                case "+": return new PlusOp();
+                case "-": return new MinusOp();
+                case "*": return new TimesOp();
+                case "/": return new DivideOp();
+                case "%": return new ModOp();
+                case "=": return new AssignOp();
+                case "==": return new EqualOp();
+                case "!=": return new NotEqualOp();
+                case ">=": return new GreaterThanOrEqualOp();
+                case "<=": return new LesserThanOrEqualOp();
+                case ">": return new Greater();
+                case "<": return new Lesser();
                 default:
                     throw new TokenizerException($"Unknown Operator: {op}");
             }
@@ -111,14 +109,10 @@ namespace Lillian.Tokenize
         {
             switch (op)
             {
-                case ",":
-                    return new Comma();
-                case ";":
-                    return new SemiColon();
-                case "(":
-                    return new OpenParen();
-                case ")":
-                    return new CloseParen();
+                case ",": return new Comma();
+                case ";": return new SemiColon();
+                case "(": return new OpenParen();
+                case ")": return new CloseParen();
                 default:
                     throw new TokenizerException($"Unknown Symbol: {op}");
             }

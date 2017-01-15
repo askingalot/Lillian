@@ -53,7 +53,26 @@ namespace Lillian.Tokenize
     {
         public EqualOp() : base("==") { }
     }
-
+    public class NotEqualOp : Op
+    {
+        public NotEqualOp() : base("!=") { }
+    }
+    public class GreaterThanOrEqualOp : Op
+    {
+        public GreaterThanOrEqualOp() : base(">=") { }
+    }
+    public class LesserThanOrEqualOp : Op
+    {
+        public LesserThanOrEqualOp() : base("<=") { }
+    }
+    public class Greater : Op
+    {
+        public Greater() : base(">") { }
+    }
+    public class Lesser : Op
+    {
+        public Lesser() : base("<") { }
+    }
 
     /*************************************************************
      *  Symbols

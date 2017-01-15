@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Threading;
+using System.Reflection;
 using Lillian.Lib;
 using Lillian.Tokenize;
 
@@ -16,10 +15,14 @@ namespace Lillian.Parse
                            | Semi
             NonEmptyExpr  := Call
                            | Binding
+                           | BinOp
+            BinOp         := Comparison
+            Comparison    := Boolean
+                           | Boolean CompOp Boolean
                            | String
-                           | Boolean
-                           | Sum
-                           | Comparison
+                           | String CompOp String
+                           : Sum
+                           : Sum CompOp Sum
             Call          := Id ( Args )
                            | Id ( ) 
             Args          := NonEmptyExpr, Args
@@ -42,6 +45,7 @@ namespace Lillian.Parse
             Id            := a-z (a-z | _ | A-Z)*
             SumOp         := + | -
             ProdOp        := * | / | %
+            CompOp        := ==
             AssignOp      := =
             Semi          := ;
 
@@ -86,10 +90,7 @@ namespace Lillian.Parse
         {
             return Call(tokens)
                    ?? Binding(tokens)
-                   ?? StringLiteral(tokens)
-                   ?? BooleanLiteral(tokens)
-                   //?? Comparison(tokens)
-                   ?? Sum(tokens);
+                   ?? BinaryOperation(tokens);
         }
 
         public static Expression Call(TokenEnumerator tokens)
@@ -104,18 +105,15 @@ namespace Lillian.Parse
                 if (!(startToken is OpenParen)) return null;
 
                 var args = new List<Expression>();
-                var arg = NonEmptyExpr(toks);
-                while (arg != null)
+                toks.MoveNext();
+                while (!(toks.Current is CloseParen))
                 {
+                    var arg = NonEmptyExpr(toks);
                     args.Add(arg);
 
-                    if (toks.Peek() is CloseParen) break;
-
                     toks.MoveNext();
-                    if (!(toks.Current is Comma))
+                    if (!(toks.Current is Comma || toks.Current is CloseParen))
                         throw new ParseException("Expected ','");
-
-                    arg = NonEmptyExpr(toks);
                 }
 
                 if (toks.MoveNext() && !(toks.Current is CloseParen))
@@ -156,76 +154,76 @@ namespace Lillian.Parse
             });
         }
 
-        public static Expression BooleanLiteral(TokenEnumerator tokens)
+        public static Expression BinaryOperation(TokenEnumerator tokens)
         {
-            return Util.Transaction(tokens, toks => {
-                tokens.MoveNext();
-                var booleanLiteral = tokens.Current as BooleanLiteral;
-                return booleanLiteral == null
-                    ? null
-                    : Expression.Constant(booleanLiteral.Value);
-            });
+            return Comparison(tokens);
         }
 
         public static Expression Comparison(TokenEnumerator tokens)
         {
-            return Util.Transaction(tokens, toks => {
-                var leftExpr = NonEmptyExpr(toks);
-                if (leftExpr == null) return null;
+            var lhs = BooleanLiteral(tokens)
+                      ?? StringLiteral(tokens)
+                      ?? Sum(tokens);
+            if (lhs == null) return null;
 
-                toks.MoveNext();
-                if (!(toks.Current is EqualOp)) return null;
-
-                var rightExpr = NonEmptyExpr(toks);
-                if (rightExpr == null)
-                    throw new ParseException("Expected an Expression on right side of comparison");
-
-                return Expression.Equal(leftExpr, rightExpr);
-            });
-        }
-
-        public static Expression StringLiteral(TokenEnumerator tokens)
-        {
-            return Util.Transaction(tokens, toks => {
+            var comp = Util.Transaction(tokens, toks =>
+            {
                 tokens.MoveNext();
-                var strLiteral = tokens.Current as StringLiteral;
-                return strLiteral == null
-                    ? null
-                    : Expression.Constant(strLiteral.Value);
+                var compOp = tokens.Current;
+                if (!(compOp is Op)) return null;
+
+                var rhs = Comparison(tokens);
+                if (rhs == null)
+                    throw new ParseException("Expected right hand side of comparison");
+
+                if (compOp is EqualOp)
+                    return Expression.Equal(lhs, rhs);
+                if (compOp is NotEqualOp)
+                    return Expression.NotEqual(lhs, rhs);
+                if (compOp is GreaterThanOrEqualOp)
+                    return Expression.GreaterThanOrEqual(lhs, rhs);
+                if (compOp is LesserThanOrEqualOp)
+                    return Expression.LessThanOrEqual(lhs, rhs);
+                if (compOp is Greater)
+                    return Expression.GreaterThan(lhs, rhs);
+                if (compOp is Lesser)
+                    return Expression.LessThan(lhs, rhs);
+
+                return null;
             });
+
+            return comp ?? lhs;
         }
 
         public static Expression Sum(TokenEnumerator tokens)
         {
-            var product = Product(tokens);
-            if (product == null)
-                return null;
+            var lhs = Product(tokens);
+            if (lhs == null) return null;
 
             var sum = Util.Transaction(tokens, toks => {
                 tokens.MoveNext();
                 var sumOp = tokens.Current;
                 if (!(sumOp is Op)) return null;
 
-                var sumVal = Sum(toks);
-                if (sumVal == null)
+                var rhs = Sum(toks);
+                if (rhs == null)
                     throw new ParseException("Expected a numeric expression.");
 
                 if (sumOp is PlusOp)
-                    return Expression.Add(product, sumVal);
+                    return Expression.Add(lhs, rhs);
                 if (sumOp is MinusOp)
-                    return Expression.Subtract(product, sumVal);
+                    return Expression.Subtract(lhs, rhs);
 
                 return null;
-                ;
             });
 
-            return sum ?? product;
+            return sum ?? lhs;
         }
 
         public static Expression Product(TokenEnumerator tokens)
         {
-            var factor = Factor(tokens);
-            if (factor == null)
+            var lhs = Factor(tokens);
+            if (lhs == null)
                 return null;
 
             var product = Util.Transaction(tokens, toks => {
@@ -233,21 +231,21 @@ namespace Lillian.Parse
                 var prodOp = toks.Current;
                 if (!(prodOp is Op)) return null;
 
-                var prodVal = Product(toks);
-                if (prodVal == null)
+                var rhs = Product(toks);
+                if (rhs == null)
                     throw new ParseException("Expected a numeric expression.");
 
                 if (prodOp is TimesOp)
-                    return Expression.Multiply(factor, prodVal);
+                    return Expression.Multiply(lhs, rhs);
                 if (prodOp is DivideOp)
-                    return Expression.Divide(factor, prodVal);
+                    return Expression.Divide(lhs, rhs);
                 if (prodOp is ModOp)
-                    return Expression.Modulo(factor, prodVal);
+                    return Expression.Modulo(lhs, rhs);
 
                 return null;
             });
 
-            return product ?? factor;
+            return product ?? lhs;
         }
 
         public static Expression Factor(TokenEnumerator tokens)
@@ -299,12 +297,39 @@ namespace Lillian.Parse
             });
         }
 
-        public static readonly IDictionary<string, Expression> Scope =
-            new Dictionary<string, Expression> {
-                { "print", (Expression<ParamsFunc>) (vals => Builtin.Print(vals)) },
-                { "println", (Expression<ParamsFunc>) (vals => Builtin.PrintLn(vals)) },
-                { "concat", (Expression<ParamsFunc>) (vals => Builtin.Concat(vals)) }
-            };
+        public static Expression StringLiteral(TokenEnumerator tokens)
+        {
+            return Util.Transaction(tokens, toks => {
+                tokens.MoveNext();
+                var strLiteral = tokens.Current as StringLiteral;
+                return strLiteral == null
+                    ? null
+                    : Expression.Constant(strLiteral.Value);
+            });
+        }
 
+        public static Expression BooleanLiteral(TokenEnumerator tokens)
+        {
+            return Util.Transaction(tokens, toks => {
+                tokens.MoveNext();
+                var booleanLiteral = tokens.Current as BooleanLiteral;
+                return booleanLiteral == null
+                    ? null
+                    : Expression.Constant(booleanLiteral.Value);
+            });
+        }
+
+
+        public static readonly IDictionary<string, Expression> Scope = ScopeWithBuiltins();
+
+
+        private static IDictionary<string, Expression> ScopeWithBuiltins()
+        {
+            var builtins = typeof (Builtin).GetMethods(BindingFlags.Public | BindingFlags.Static);
+            return builtins.ToDictionary<MethodInfo, string, Expression>(
+                builtin => builtin.Name.ToCamelCase(), 
+                builtin => (Expression<ParamsFunc>) 
+                    (vals => builtin.Invoke(null, BindingFlags.Public | BindingFlags.Static, null, new object[] {vals}, null)));
+        } 
     }
 }
