@@ -52,9 +52,9 @@ namespace Lillian.Parse
         public Scope Scope { get; }
 
         public Parser() : this(Util.ScopeWithBuiltins()) { }
-        public Parser(Scope parent)
+        public Parser(Scope parentScope)
         {
-            Scope = new Scope(parent);
+            Scope = new Scope(parentScope);
         }
 
         public LambdaExpression Parse(TokenEnumerator tokens)
@@ -112,8 +112,7 @@ namespace Lillian.Parse
 
         private Expression Function(TokenEnumerator tokens)
         {
-            return Util.Transaction(tokens, toks =>
-            {
+            return Util.Transaction(tokens, () => {
                 tokens.MoveNext();
                 if (!(tokens.Current is Fun)) return null;
 
@@ -125,7 +124,7 @@ namespace Lillian.Parse
                 if (!(tokens.Current is CloseParen))
                     throw new ParseException("Expected ')' in 'fun' declaration.");
 
-                var funParser = new Parser(parent: Scope);
+                var funParser = new Parser(parentScope: Scope);
                 var fun = funParser.Parse(tokens);
                 return fun;
             });
@@ -133,33 +132,37 @@ namespace Lillian.Parse
 
         public Expression Call(TokenEnumerator tokens)
         {
-            return Util.Transaction(tokens, toks =>
+            return Util.Transaction(tokens, () =>
             {
                 var id = Identifier(tokens);
                 if (id == null) return null;
 
-                toks.MoveNext();
-                if (!(toks.Current is OpenParen)) return null;
+                tokens.MoveNext();
+                if (!(tokens.Current is OpenParen)) return null;
+
+                var fun = id as LambdaExpression;
+                if (fun == null)
+                    throw new ParseException("Identifier is not invokable.");
 
                 var args = new List<Expression>();
-                if (toks.Peek() is CloseParen)
+                if (tokens.Peek() is CloseParen)
                 {
-                    toks.MoveNext();
+                    tokens.MoveNext();
                 }
                 else
                 {
                     do
                     {
-                        var arg = NonEmptyExpr(toks);
+                        var arg = NonEmptyExpr(tokens);
                         args.Add(arg);
 
-                        toks.MoveNext();
-                        if (!(toks.Current is Comma || toks.Current is CloseParen))
+                        tokens.MoveNext();
+                        if (!(tokens.Current is Comma || tokens.Current is CloseParen))
                             throw new ParseException("Expected ',' or ')'");
-                    } while (!(toks.Current is CloseParen));
+                    } while (!(tokens.Current is CloseParen));
                 }
 
-                return args.Count > 0
+                return fun.Parameters.Count > 0
                     ? Expression.Invoke(id, 
                         Expression.NewArrayInit(typeof (object), args.Select(a => Expression.Convert(a, typeof (object)))))
                     : Expression.Invoke(id);
@@ -169,7 +172,7 @@ namespace Lillian.Parse
 
         public Expression Binding(TokenEnumerator tokens)
         {
-            return Util.Transaction(tokens, toks => {
+            return Util.Transaction(tokens, () => {
                 tokens.MoveNext();
                 var let = tokens.Current as Let;
                 if (let == null)
@@ -207,7 +210,7 @@ namespace Lillian.Parse
                       ?? Sum(tokens);
             if (lhs == null) return null;
 
-            var comp = Util.Transaction(tokens, toks =>
+            var comp = Util.Transaction(tokens, () =>
             {
                 tokens.MoveNext();
                 var compOp = tokens.Current;
@@ -241,12 +244,12 @@ namespace Lillian.Parse
             var lhs = Product(tokens);
             if (lhs == null) return null;
 
-            var sum = Util.Transaction(tokens, toks => {
+            var sum = Util.Transaction(tokens, () => {
                 tokens.MoveNext();
                 var sumOp = tokens.Current;
                 if (!(sumOp is Op)) return null;
 
-                var rhs = Sum(toks);
+                var rhs = Sum(tokens);
                 if (rhs == null)
                     throw new ParseException("Expected a numeric expression.");
 
@@ -267,12 +270,12 @@ namespace Lillian.Parse
             if (lhs == null)
                 return null;
 
-            var product = Util.Transaction(tokens, toks => {
-                toks.MoveNext();
-                var prodOp = toks.Current;
+            var product = Util.Transaction(tokens, () => {
+                tokens.MoveNext();
+                var prodOp = tokens.Current;
                 if (!(prodOp is Op)) return null;
 
-                var rhs = Product(toks);
+                var rhs = Product(tokens);
                 if (rhs == null)
                     throw new ParseException("Expected a numeric expression.");
 
@@ -299,7 +302,7 @@ namespace Lillian.Parse
 
         public Expression MathParenthetical(TokenEnumerator tokens)
         {
-            return Util.Transaction(tokens, toks => {
+            return Util.Transaction(tokens, () => {
                 tokens.MoveNext();
                 var startToken = tokens.Current;
                 if (!(startToken is OpenParen))
@@ -315,9 +318,9 @@ namespace Lillian.Parse
 
         public Expression Number(TokenEnumerator tokens)
         {
-            return Util.Transaction(tokens, toks => {
-                toks.MoveNext();
-                var intLiteral = toks.Current as IntLiteral;
+            return Util.Transaction(tokens, () => {
+                tokens.MoveNext();
+                var intLiteral = tokens.Current as IntLiteral;
                 return intLiteral == null 
                     ? null 
                     : Expression.Constant(intLiteral.Value);
@@ -326,13 +329,13 @@ namespace Lillian.Parse
 
         public Expression Identifier(TokenEnumerator tokens)
         {
-            return Util.Transaction(tokens, toks => {
-                toks.MoveNext();
-                var id = toks.Current as Identifier;
+            return Util.Transaction(tokens, () => {
+                tokens.MoveNext();
+                var id = tokens.Current as Identifier;
                 if (id == null) return null;
 
                 if (! Scope.ContainsKey(id.Name))
-                    throw new ParseException($"Identifier, '{toks.Current}', has not been declared");
+                    throw new ParseException($"Identifier, '{tokens.Current}', has not been declared");
 
                 return Scope[id.Name];
             });
@@ -340,7 +343,7 @@ namespace Lillian.Parse
 
         public Expression StringLiteral(TokenEnumerator tokens)
         {
-            return Util.Transaction(tokens, toks => {
+            return Util.Transaction(tokens, () => {
                 tokens.MoveNext();
                 var strLiteral = tokens.Current as StringLiteral;
                 return strLiteral == null
@@ -351,7 +354,7 @@ namespace Lillian.Parse
 
         public Expression BooleanLiteral(TokenEnumerator tokens)
         {
-            return Util.Transaction(tokens, toks => {
+            return Util.Transaction(tokens, () => {
                 tokens.MoveNext();
                 var booleanLiteral = tokens.Current as BooleanLiteral;
                 return booleanLiteral == null

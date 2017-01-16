@@ -44,7 +44,7 @@ namespace Lillian.Lib
 
             try
             {
-                var body = vals[1] as dynamic;
+                var body = vals[1] as dynamic; // Should be a Func of some type
                 object result = "";
                 for (var i = 0; i < iterations; i++)
                 {

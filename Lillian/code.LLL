@@ -1,4 +1,5 @@
 ﻿# Let's do some math
+printLine();
 let num = 42;
 let meaning_of_life = fun() {
 	printLine('inside fn');
@@ -7,9 +8,10 @@ let meaning_of_life = fun() {
 #let res = meaning_of_life();
 #printLine(res + 1);
 
-let i = 42;
+let i = 4;
 loop(i, fun() {
 	printLine('la', ' la ', 'la');
+	printLine();
 });
 
 #let x = 2;

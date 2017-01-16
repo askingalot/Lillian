@@ -48,7 +48,7 @@
     <Compile Include="Lib\Utils.cs" />
     <Compile Include="Parse\ParseException.cs" />
     <Compile Include="Parse\Parser.cs" />
-    <Compile Include="Parse\ParserUtils.cs" />
+    <Compile Include="Parse\Util.cs" />
     <Compile Include="Parse\Scope.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

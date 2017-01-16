@@ -31,13 +31,13 @@ namespace Lillian.Parse
         /// </param>
         /// <returns>The return value of the expressionProducer()</returns>
         public static Expression Transaction(TokenEnumerator tokens, 
-            Func<TokenEnumerator, Expression> expressionProducer)
+            Func<Expression> expressionProducer)
         {
             Expression resultExpression = null;
             var savePoint = tokens.CreateSavePoint();
             try
             {
-                resultExpression = expressionProducer(tokens);
+                resultExpression = expressionProducer();
             }
             finally 
             {
@@ -55,7 +55,9 @@ namespace Lillian.Parse
             var initialScope = builtins.ToDictionary<MethodInfo, string, Expression>(
                 builtin => builtin.Name.ToCamelCase(), 
                 builtin => (Expression<ParamsFunc>) 
-                    (vals => builtin.Invoke(null, BindingFlags.Public | BindingFlags.Static, null, new object[] {vals}, null)));
+                    (vals => builtin.Invoke(
+                        null, BindingFlags.Public | BindingFlags.Static, 
+                        null, new object[] {vals}, null)));
 
             return new Scope(initialScope);
         } 
