@@ -42,3 +42,6 @@ My attempt to understand programming language interpreters by building one.
 
 
 See https://github.com/askingalot/Lillian/blob/master/Lillian/code.LLL for example source.
+
+
+It should probably also be noted that I have no idea what I'm doing.
