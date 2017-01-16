@@ -1,10 +1,16 @@
 ﻿# Let's do some math
-let fn = fun() {
+let num = 42;
+let meaning_of_life = fun() {
 	printLine('inside fn');
-	42;
+	num;
 };
-let res = fn();
-printLine(res + 1);
+#let res = meaning_of_life();
+#printLine(res + 1);
+
+let i = 42;
+loop(i, fun() {
+	printLine('la', ' la ', 'la');
+});
 
 #let x = 2;
 #let z = x + 1 - 27 + (-30) * 100 / 1000;

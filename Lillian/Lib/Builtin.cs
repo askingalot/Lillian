@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Microsoft.CSharp.RuntimeBinder;
 
 namespace Lillian.Lib
 {
@@ -30,6 +31,31 @@ namespace Lillian.Lib
             return vals == null
                 ? ""
                 : string.Concat(vals.Select(v => v ?? ""));
+        }
+
+        public static object Loop(params object[] vals)
+        {
+            if (vals.Length < 2)
+                throw new ArgumentException($"{nameof(Loop)} expects two arguments.");
+
+            var iterations = vals[0] as int?;
+            if (iterations == null)
+                throw new ArgumentException($"{nameof(Loop)}: first argument must be an int.");
+
+            try
+            {
+                var body = vals[1] as dynamic;
+                object result = "";
+                for (var i = 0; i < iterations; i++)
+                {
+                    result = body.Invoke();
+                }
+                return result;
+            }
+            catch (RuntimeBinderException)
+            {
+                throw new ArgumentException($"{nameof(Loop)}: second argument must be invokable.");
+            }
         }
     }
 }
