@@ -81,17 +81,14 @@ namespace Lillian.Tokenize
     {
         public Symbol(string lexeme) : base(lexeme) { }
     }
-
     public class OpenParen : Symbol
     {
         public OpenParen() : base("(") { }
     }
-
     public class CloseParen : Symbol
     {
         public CloseParen() : base (")") { }
     }
-
     public class SemiColon : Symbol
     {
         public SemiColon() : base (";") { }
@@ -100,7 +97,14 @@ namespace Lillian.Tokenize
     {
         public Comma() : base (",") { }
     }
-
+    public class OpenCurly : Symbol
+    {
+        public OpenCurly() : base("{") { }
+    }
+    public class CloseCurly : Symbol
+    {
+        public CloseCurly() : base ("}") { }
+    }
 
     /*************************************************************
      *  Keywords
@@ -113,6 +117,10 @@ namespace Lillian.Tokenize
     public class Let : Keyword
     {
         public Let() : base ("let") { }
+    }
+    public class Fun : Keyword
+    {
+        public Fun() : base ("fun") { }
     }
 
 

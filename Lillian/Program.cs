@@ -15,14 +15,14 @@ namespace Lillian
             {
                 var tokens = Tokenizer.Tokenize(new StringReader(expression));
 
-                var expr = new Parser().Parse(tokens.Select(t =>
-                {
-/*                    Console.Write(t);
-                    if (t is SemiColon)
-                        Console.WriteLine();
+                var expr = new Parser().Parse(new TokenEnumerator(
+                        tokens.Select(t => {
+/*                          Console.Write(t);
+                            if (t is SemiColon)
+                                Console.WriteLine();
 */
-                    return t;
-                }));
+                            return t;
+                        })));
                 Console.WriteLine();
 
                 var executer = expr.Compile();

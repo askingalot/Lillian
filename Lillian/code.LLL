@@ -1,19 +1,20 @@
 ﻿# Let's do some math
-printLine();
-printLine();
-printLine();
-printLine();
-printLine();
+let fn = fun() {
+	printLine('inside fn');
+	42;
+};
+let res = fn();
+printLine(res + 1);
 
-let x = 2;
-let z = x + 1 - 27 + (-30) * 100 / 1000;
-printLine(z);
-print('a', 'b', 'c');
-printLine('');
+#let x = 2;
+#let z = x + 1 - 27 + (-30) * 100 / 1000;
+#printLine(z);
+#print('a', 'b', 'c');
+#printLine('');
 
 #let str = 'a string';
 
-let t = true;
-let f = false;
+#let t = true;
+#let f = false;
 
-t != f;
+#t != f;

@@ -13,9 +13,11 @@ namespace Lillian.Tokenize
         public static readonly Regex BooleanLiteral  = new Regex(@"^(true|false)");
         public static readonly Regex Operator        = 
             new Regex(@"^(==|!=|>=|<=|>|<|\+|-|\*|\/|%|=)");
-        public static readonly Regex Symbol          = new Regex(@"^[,;()]");
+        public static readonly Regex Symbol          = new Regex(@"^[,;(){}]");
         public static readonly Regex Keyword         = 
-            new Regex($@"^{string.Join("|", "let")}");
+            new Regex($@"^({
+                string.Join("|", "let", "fun")
+            })");
         public static readonly Regex Identifer       = new Regex(@"^[_a-z]([_a-zA-Z0-9])*");
 
         public static IEnumerable<Token> Tokenize(TextReader reader)
@@ -79,6 +81,7 @@ namespace Lillian.Tokenize
             switch (lexeme)
             {
                 case "let": return new Let();
+                case "fun": return new Fun();
                 default:
                     throw new TokenizerException($"Unknown Keyword {lexeme}");
             }
@@ -109,10 +112,12 @@ namespace Lillian.Tokenize
         {
             switch (op)
             {
-                case ",": return new Comma();
-                case ";": return new SemiColon();
                 case "(": return new OpenParen();
                 case ")": return new CloseParen();
+                case ",": return new Comma();
+                case ";": return new SemiColon();
+                case "{": return new OpenCurly();
+                case "}": return new CloseCurly();
                 default:
                     throw new TokenizerException($"Unknown Symbol: {op}");
             }

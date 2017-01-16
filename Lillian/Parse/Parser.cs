@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using Lillian.Lib;
 using Lillian.Tokenize;
 
 namespace Lillian.Parse
@@ -59,22 +57,32 @@ namespace Lillian.Parse
             Scope = new Scope(parent);
         }
 
-        public LambdaExpression Parse(IEnumerable<Token> tokenList)
+        public LambdaExpression Parse(TokenEnumerator tokens)
         {
-            return Expression.Lambda(ExprBlock(new TokenEnumerator(tokenList)));
+            return Expression.Lambda(ParseBlock(tokens));
         }
 
-        public BlockExpression ExprBlock(TokenEnumerator tokens)
+        public BlockExpression ParseBlock(TokenEnumerator tokens)
         {
+            if (tokens.Peek() is OpenCurly)
+            {
+                tokens.MoveNext();
+            }
+
             var expressions = new List<Expression>();
-            while (tokens.HasNext)
+            while (tokens.HasNext && !(tokens.Peek() is CloseCurly))
             {
                 expressions.Add(Expr(tokens));
             }
 
+            if (tokens.HasNext && tokens.Peek() is CloseCurly)
+            {
+                tokens.MoveNext();
+            }
+
             var variables = expressions
-                .Where(b => b.NodeType == ExpressionType.Assign)
-                .Select(b => ((BinaryExpression) b).Left)
+                .Where(e => e.NodeType == ExpressionType.Assign)
+                .Select(e => ((BinaryExpression) e).Left)
                 .Cast<ParameterExpression>();
 
             return Expression.Block(variables, expressions);
@@ -96,9 +104,31 @@ namespace Lillian.Parse
 
         public Expression NonEmptyExpr(TokenEnumerator tokens)
         {
-            return Call(tokens)
+            return Function(tokens)
+                   ?? Call(tokens)
                    ?? Binding(tokens)
                    ?? BinaryOperation(tokens);
+        }
+
+        private Expression Function(TokenEnumerator tokens)
+        {
+            return Util.Transaction(tokens, toks =>
+            {
+                tokens.MoveNext();
+                if (!(tokens.Current is Fun)) return null;
+
+                tokens.MoveNext();
+                if (!(tokens.Current is OpenParen))
+                    throw new ParseException("Expected '(' in 'fun' declaration.");
+
+                tokens.MoveNext();
+                if (!(tokens.Current is CloseParen))
+                    throw new ParseException("Expected ')' in 'fun' declaration.");
+
+                var funParser = new Parser(parent: Scope);
+                var fun = funParser.Parse(tokens);
+                return fun;
+            });
         }
 
         public Expression Call(TokenEnumerator tokens)
@@ -129,10 +159,10 @@ namespace Lillian.Parse
                     } while (!(toks.Current is CloseParen));
                 }
 
-                var printArgs = Expression.NewArrayInit(
-                    typeof (object), args.Select(a => Expression.Convert(a, typeof(object))));
-
-                return Expression.Invoke(id, printArgs);
+                return args.Count > 0
+                    ? Expression.Invoke(id, 
+                        Expression.NewArrayInit(typeof (object), args.Select(a => Expression.Convert(a, typeof (object)))))
+                    : Expression.Invoke(id);
             });
         }
 
@@ -147,7 +177,8 @@ namespace Lillian.Parse
 
                 tokens.MoveNext();
                 var id = tokens.Current as Identifier;
-                if (id == null) throw new ParseException("Expected valid Identifier in 'let' binding.");
+                if (id == null)
+                    throw new ParseException("Expected valid Identifier in 'let' binding.");
 
                 tokens.MoveNext();
                 var assign = tokens.Current as AssignOp;
