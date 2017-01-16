@@ -52,12 +52,15 @@ namespace Lillian.Parse
         public static Scope ScopeWithBuiltins()
         {
             var builtins = typeof (Builtin).GetMethods(BindingFlags.Public | BindingFlags.Static);
+
+            //TODO: Look into using the parameters array to detrmine which 
+            // Func<T1, T2,...> to use.
+            //builtins.First().GetParameters().First().
+
             var initialScope = builtins.ToDictionary<MethodInfo, string, Expression>(
                 builtin => builtin.Name.ToCamelCase(), 
                 builtin => (Expression<ParamsFunc>) 
-                    (vals => builtin.Invoke(
-                        null, BindingFlags.Public | BindingFlags.Static, 
-                        null, new object[] {vals}, null)));
+                    (vals => builtin.Invoke(null, new object[] {vals})));
 
             return new Scope(initialScope);
         } 

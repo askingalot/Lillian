@@ -132,8 +132,7 @@ namespace Lillian.Parse
 
         public Expression Call(TokenEnumerator tokens)
         {
-            return Util.Transaction(tokens, () =>
-            {
+            return Util.Transaction(tokens, () => {
                 var id = Identifier(tokens);
                 if (id == null) return null;
 
@@ -210,8 +209,7 @@ namespace Lillian.Parse
                       ?? Sum(tokens);
             if (lhs == null) return null;
 
-            var comp = Util.Transaction(tokens, () =>
-            {
+            var comp = Util.Transaction(tokens, () => {
                 tokens.MoveNext();
                 var compOp = tokens.Current;
                 if (!(compOp is Op)) return null;
