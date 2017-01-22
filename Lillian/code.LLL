@@ -1,4 +1,5 @@
-﻿# Let's do some math
+﻿# A comment is a comment is a comment
+
 printLine();
 let num = 42;
 let meaning_of_life = fun() {
@@ -13,6 +14,21 @@ loop(i, fun() {
 	printLine('la', ' la ', 'la');
 	printLine();
 });
+
+if(i <= 11, fun() {
+	print('it is true! ');
+	printLine('I can have multiple lines');
+}, fun() {
+	printLine('it is false!');
+});
+
+let the_truth = 
+	if(true, fun() {
+		'It is so very true!';
+	}, fun() {
+		'Too, bad! It is false.';
+	});
+printLine('The value of the_truth is "', the_truth, '"');
 
 #let x = 2;
 #let z = x + 1 - 27 + (-30) * 100 / 1000;

@@ -57,5 +57,37 @@ namespace Lillian.Lib
                 throw new ArgumentException($"{nameof(Loop)}: second argument must be invokable.");
             }
         }
+
+        public static object If(params object[] vals)
+        {
+            if (vals.Length < 2)
+                throw new ArgumentException($"{nameof(If)} expects at least two arguments.");
+
+            var predicate = vals[0] as bool?;
+            if (predicate == null)
+                throw new ArgumentException($"{nameof(If)}: first argument must be an bool.");
+
+            try
+            {
+                // Should be a Func of some type
+                var thenBody = vals[1] as dynamic; 
+                var elseBody = (vals.Length >= 3 ? vals[2] : null) as dynamic;
+
+                object result = "";
+                if (predicate.Value)
+                {
+                    result = thenBody.Invoke();
+                }
+                else if (elseBody != null)
+                {
+                    result = elseBody.Invoke();
+                }
+                return result;
+            }
+            catch (RuntimeBinderException)
+            {
+                throw new ArgumentException($"{nameof(If)}: second argument must be invokable.");
+            }
+        }
     }
 }
