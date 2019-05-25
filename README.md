@@ -27,13 +27,13 @@ My attempt to understand programming language interpreters by building one.
     * Some kind of special "mutable" keyword like F#?
 
 
-###Non-Goals *(I'm not trying to...)*
+### Non-Goals *(I'm not trying to...)*
 * Performance
 * Multi-threading
 * Custom virtual machine (using and abusing [Expressions](https://msdn.microsoft.com/en-us/library/system.linq.expressions.expression(v=vs.110).aspx))
 
 
-###Inspirations
+### Inspirations
 * C#
 * F#
 * Erlang
