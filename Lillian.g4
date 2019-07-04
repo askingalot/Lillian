@@ -2,14 +2,44 @@ grammar Lillian;
 
 program : block EOF ;
 
-block : (expr ';')+ ;
+block : (expr ';')* ;
 
 expr : functionDefinition
      | functionCall
      | binding
      | '-' expr
-     | expr ('*'|'/') expr
-     | expr ('+'|'-') expr
+     | expr op=('*'|'/') expr
+     | expr op=('+'|'-') expr 
+     | INT_LITERAL 
+     | STRING_LITERAL
+     | IDENTIFIER
+     ;
+
+functionDefinition : 'fun' '(' ( parameterList | ) ')' ':' TYPE '{' block '}' ;
+
+functionCall : IDENTIFIER '(' argumentList ')' ;
+
+argumentList : ( expr ( ',' expr )* )? ;
+
+binding : 'let' idType '=' expr ;
+
+idType : IDENTIFIER ':' TYPE ;
+
+parameterList : ( idType (',' idType )* ) ;
+
+TYPE : [A-Z][a-zA-Z0-9_]* ;
+IDENTIFIER : [_a-zA-Z][_?a-zA-Z0-9]* ;
+
+INT_LITERAL : [0-9]+ ;
+
+STRING_LITERAL : '\'' ~'\''* '\'' 
+               |  '"' ~'"'* '"' 
+               ;
+
+COMMENT : '//' ~('\r' | '\n')* -> skip ;
+ML_COMMENT : '/*' .*? '*/' -> skip ;
+
+WS : [ \t\r\n]+ -> skip;
 
 /*
     ExprBlock     := Expr Expr*

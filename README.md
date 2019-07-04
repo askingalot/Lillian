@@ -10,7 +10,8 @@ My attempt to understand programming language interpreters by building one.
     * few concepts
     * few keywords / operators
     * little boilerplate
-* Dynamicly typed variables ("values")
+* Statically typed
+    * I'd like it to be structurally typed
 * Functional
     * First class functions
     * Recursion
